@@ -12,5 +12,5 @@
 - PIO for Robot servos are created. Also some basic movements implemented for base servos.
 
 #### Week 7(17 October - 23 October)
-- Up movement and still movement is implemented successfully in Leap Motion. This is the one of atomic parts of our project.
-- Basic grab and move movement implemented successfully. in Robot Arm. This is the one of atomic parts of our project. 
+- Detecting movement and classifying it for the right hand  is implemented successfully in Leap Motion. The main challenge was to find which gesture was detected in Leap Motion.
+- A grap and get movement implemented in Robot arm by using all the servos simultaneously. The arm goes for a specific location, get closes to the target, graps it and then take it to the destination and leaves there smoothly.
