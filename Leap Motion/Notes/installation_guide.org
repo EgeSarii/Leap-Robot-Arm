@@ -1,0 +1,120 @@
+* INTRODUCTION
+This text is related to the installation of the Leap Motion device on
+a Linux machine. Both members of our team are using such a system.
+
+If another OS is used, please refer to [[https://developer.leapmotion.com/tracking-software-download][download_page]].
+The page says that the only Linux distribution on which Leap can run
+is Ubuntu.
+Debian, however, supports Leap too.
+
+This is because Ubuntu is derived from Debian. It means that Ubuntu
+uses the same APT packaging system as Debian and shares a huge number
+of packages and libraries from Debian repositories. It utilizes the
+Debian infrastructure as base.
+
+Because of the above, this guide can be used for both Ubuntu and
+Debian; we have successfully installed the LeapSDK and Controller on
+both systems:
+
+: Debian GNU/Linux 11 (bullseye) 64-bit, GNOME 3.38.5
+: Ubuntu 22.04 LTS
+
+
+* INSTALLATION PROCESS
+The following will be installed:
+
+     1. libgl1-mesa-glx := 3-D graphic library with integrated API
+
+     2. Leap Motion SDK := SDK needed for running and implementing the Leap Motion
+                           system
+** LIBGL1-MESA-GLX**
+This is a 3-D graphics library with an integrated API.
+In order to download this library, run the following command from the
+command-line:
+: sudo apt-get install libgl1-mesa-glx
+
+
+** LEAP MOTION SDK**
+Download the file for Linux at this [[https://developer.leapmotion.com/tracking-software-download][link]].
+After that uncompress the file with the command:
+: tar zxf Leap_Motion_SDK_Linux_2.3.1.tgz
+
+Now install the .deb file:
+: sudo dpkg -i Leap-2.3.1+31549-x64.deb
+
+
+* SET-UP PROCESS
+In the downloaded package the Leap Motion Controller is implemented as
+a daemon. Because of this, an issue occurs.
+The issue is that the package "leap" looks for the initialization file
+"skeleton" after installation.
+This file has been discarded in new distributions and it is not used
+anymore.
+By following this installation, the problem is circumvented but not fixed:
+when running software upgrades or updates the issue will persist and
+an error message will be displayed.
+
+A work around is to actually create such "skeleton" file at location:
+: /etc/init.d/
+
+The file can be copied and pasted from this [[https://www.apt-browse.org/browse/debian/wheezy/main/amd64/initscripts/2.88dsf-41+deb7u1/file/etc/init.d/skeleton][link]].
+
+The next step of the set-up is to fix the service and actually
+circumvent the above issue.
+This can be done by using the following command:
+: sudo vi /lib/systemd/system/leapd.service
+
+now the vi editor is opened.
+Copy and paste the following:
+
+#+BEGIN_example
+[Unit]
+Description=LeapMotion Daemon
+After=syslog.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/leapd
+
+[Install]
+WantedBy=multi-user.target
+#+END_EXAMPLE
+
+then press :w followed by :q in the editor.
+
+To finish the set-up the creation of a symbolic link is needed.
+This can be done with the line:
+: sudo ln -s /lib/systemd/system/leapd.service /etc/systemd/system/leapd.service 
+
+
+* STARTING THE LEAP MOTION
+Because leap runs as a daemon, few actions must be taken to start the
+daemon and connect the Leap Motion Controller.
+
+To start the daemon run the following:
+: sudo systemctl daemon-reload
+: sudo service leapd start
+: sudo leapd
+: sudo LeapControlPanel
+
+at this point the leap motion is associated and the controller can be
+used.
+To test it run either the Visualizer or Playground applications.
+
+
+* SETTING UP A PROJECT
+We choose to use the C++ programming language to program our system.
+
+The Leap Motion API allows other languages; those are: Python, Java,
+C#, Object C, and Javascript.
+
+The information in this text derive from the main [[https://developer-archive.leapmotion.com/documentation/cpp/index.html][documentation]].
+
+To start the project is is needed to build it with CMake.
+A Makefile is supplied in the SDK samples folder.
+
+An example is to build the Sample.cpp program in the given SDK.
+To make it run it use the following commands:
+: make Sample
+: ./Sample
+
