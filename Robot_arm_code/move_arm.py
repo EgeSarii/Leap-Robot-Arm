@@ -2,10 +2,17 @@ from arm import Arm
 import time
 import machine
 
-def move_arm(inp, arm):
-    
+def move_arm(inp:str, arm:Arm):
+    """
+    Move the arm in the direction of given input.
+
+    Args:
+        inp (str): The string command. It may be u for up or d for down. Otherwise the command is
+        stay still.
+        arm (Arm): The arm (or let us call the servo) that is going to make movement.
+    """
     init_angle = arm.get_angle()
-    if (inp == "u"):
+    if (inp == "u"): 
         arm.set_angle(init_angle + 20)
     elif (inp =="d"):
         arm.set_angle(init_angle -20)
