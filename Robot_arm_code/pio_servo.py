@@ -7,7 +7,7 @@ T_Y180 = 3500
 
 # freq=800000 0.5ms y=3900 2.5ms y=3500 unit_y:2.5us == 0.45degree
 @asm_pio(set_init=PIO.OUT_LOW)
-def servo_ctrl2():
+def servo_control():
     mov(x, isr)
     set(pins, 1)
 
@@ -27,7 +27,7 @@ def servo_ctrl2():
 class PIO_SERVO:
     def __init__(self, sm_id, pin):
         self._sm = StateMachine(
-            sm_id, servo_ctrl2, freq=800000, set_base=Pin(pin))
+            sm_id, servo_control, freq=800000, set_base=Pin(pin))
         # Use exec() to load max count into ISR
         # self._sm.put(T_Y0)
         self._sm.put(T_X)
@@ -37,7 +37,8 @@ class PIO_SERVO:
         self._sm.exec("pull()")
         self._sm.exec("mov(isr, osr)")
         self._sm.active(1)
-
+        self.angle = 0
+        
     def set(self, pio_cycle):
         self._sm.active(0)
         self._sm.put(pio_cycle)
@@ -60,3 +61,8 @@ class PIO_SERVO:
     def set_angle(self, angle):
         ms = (angle + 90.0) / 90.0 + 0.5
         self.set_ms(ms)
+        self.angle = angle
+        
+        
+    def get_angle(self):
+        return self.angle

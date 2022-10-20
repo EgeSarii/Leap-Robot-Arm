@@ -4,14 +4,19 @@ import time
 import machine
 
 class Arm:
-    def __init__(self,sm_id, pin):
+    def __init__(self,sm_id, pin, angle):
         self.id = sm_id
         self.pin = pin
         self.servo = PIO_SERVO(self.id, self.pin)
+        self.servo.set_angle(angle)
+        self.default_angle = angle
         print("Arm {} initialized".format(sm_id))
     
     def set_angle(self, angle):
         self.servo.set_angle(angle)
+    
+    def get_angle(self):
+        return self.servo.get_angle()
     
 
 def test_arm_1_and_2(arm1, arm2):
@@ -76,7 +81,3 @@ def go_get_it():
     time.sleep(1)
     arm6.set_angle(-90)
     
-
-
-go_get_it()
-
