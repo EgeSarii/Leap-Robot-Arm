@@ -14,3 +14,5 @@
 #### Week 7(17 October - 23 October)
 - Detecting movement and classifying it for the right hand  is implemented successfully in Leap Motion. The main challenge was to find which gesture was detected in Leap Motion.
 - A grap and get movement implemented in Robot arm by using all the servos simultaneously. The arm goes for a specific location, get closes to the target, graps it and then take it to the destination and leaves there smoothly.
+- A program with a basic user interface to control all the arms is implemented. Now by using this program (move_arm.py), you can get a tile from the floor move to wherever you want. This is the core of our project goal.
+- All the movements are discussed and decided, the implementation for all the combination is started.
