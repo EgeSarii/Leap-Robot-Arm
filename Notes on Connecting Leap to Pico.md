@@ -14,31 +14,42 @@ There is a way to do this. The principle is using the serial port connection. We
 Now we should inspect and explain these steps in a technical detailed perspective.
 For Step 1, we can use open() function of C++. We should use C++ for the steps 1 and 2 since we have used C++ for Leap .
 Opening the serial connection looks like this:
+
 	`int serial = open("/dev/ttyACM00", O_RDWR);`
 
 I have chosen ttyACM0 for my USB bus but for other computers it may be different. An error handling may be added :
-	`if ( serial< 0 )
+
+	if ( serial< 0 )
 	{
 		cout << "Error on serial port!"<<endl;
-	}`
+	}
 	
 Also the libraries must be imported :
-	 `#include <stdio.h>      // standard input / output functions`
-	` #include <stdlib.h>`
-	` #include <string.h>     // string function definitions`
-	` #include <unistd.h>     // UNIX standard function definitions`
+
+	#include <stdio.h>      // standard input / output functions
+	#include <stdlib.h>
+	#include <string.h>     // string function definitions
+	#include <unistd.h>     // UNIX standard function definitions`
 
 For Step 2, we can write the output to the serial by using write() function. The variable `output` represents the output of the program to be written to serial :
-	`write(serial, output, sizeof(output));`
+
+	write(serial, output, sizeof(output));
 
 For Step 3 we should use Python since we have used Python for Pico. We can use the sys package and stdin.readline() function for reading:
-	`import sys`
-	`input = sys.stdin.readline().strip()`
+
+	import sys
+	input = sys.stdin.readline().strip()
 	
 
 
 
-https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
+[C++ serial ports](https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/)
 
 
-https://stackoverflow.com/questions/72151781/how-can-i-get-raspberry-pi-pico-to-communicate-with-pc-external-devices
+[Pico external communication](https://stackoverflow.com/questions/72151781/how-can-i-get-raspberry-pi-pico-to-communicate-with-pc-external-devices)
+
+
+[Python serial ports](https://pythonhosted.org/pyserial/shortintro.html#opening-serial-ports)
+
+
+
