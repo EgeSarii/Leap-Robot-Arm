@@ -18,6 +18,21 @@ class Arm:
     def get_angle(self):
         return self.servo.get_angle()
     
+    def test_arm(self):
+        """
+        A tester function for arm. It tests the servo by changing the angle in all possible ways.
+
+        Args:
+            self: The arm/servo that is going to be tested.
+        """
+        while 1:
+            for i in range(-90, 90):
+                print("Angle is {}".format(i))
+                self.set_angle(i)
+                time.sleep(0.1)
+            
+            
+    
 
 def test_arm_1_and_2(arm1:Arm, arm2:Arm):
     """
@@ -44,20 +59,6 @@ def test_arm_1_and_2(arm1:Arm, arm2:Arm):
         arm2.set_angle(0)
         time.sleep(1)
 
-
-def test_arm(arm:Arm):
-    """
-    A tester function for arm. It tests the servo by changing the angle in all possible ways.
-
-    Args:
-        arm (Arm): The arm/servo that is going to be tested.
-    """
-    while 1:
-        for i in range(-90, 90):
-            print("Angle is {}".format(i))
-            arm.set_angle(i)
-            time.sleep(0.1)
-            
             
 def go_get_it():
     """
@@ -91,4 +92,3 @@ def go_get_it():
     arm1.set_angle(30)
     time.sleep(1)
     arm6.set_angle(-90)
-    
