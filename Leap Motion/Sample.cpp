@@ -17,13 +17,13 @@ using namespace Leap;
 enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
 
 //Enumeration of possible Gestures to be detected.
-enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, ROT_CLOCKWISE, ROT_ANTICLOCKWISE };
+enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE};
 
 //Data structure used to return a combination of Gesture for a
-//specific Servo.
+//specific servo of the Raspberry Pi.
 struct Movement {
-  Servo servo;
   CustomGesture gesture;
+  Servo servo;
 };
 
 const unsigned SIZE = 10; //Constant size to allow compilation of fixed arrays in C++.
@@ -35,15 +35,20 @@ const Vector EMPTY[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vecto
     ####################
 */
 
-//These two arrays of vectors will store the 10 previous vectors of a given
-//frame. This is used in order to compute gestures and catch
-//actions. Here Vectors are Leap::Vector.
+//These two arrays of vectors will store the 10 previous vectors of a
+//given frame. This is used in order to compute gestures and catch
+//actions. Here Vectors are Leap::Vector; not std::vector.
 Vector rightHandPositions[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
 Vector leftHandPositions [10] = {Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector()};
 
 //These variables are used to keep track of the indexes of such arrays
 unsigned rightHandPosIndex = 0;
 unsigned leftHandPosIndex = 0;
+
+//Mutex needed because inner class is actually executed in different tread.
+std::mutex movement_mutex;
+std::mutex r_buffer_mutex;
+std::mutex l_buffer_mutex;
 
 /*
     ############################
@@ -59,18 +64,50 @@ bool is_empty(Vector v)
 }
 
 //This function copies an array of vectors in another array.
-void copy_vec (const Vector original [SIZE], Vector copy [SIZE])
+void copy_vec (const Vector original [], Vector copy [])
 {  
   for (unsigned i = 0; i < SIZE; i++)
     copy[i] = original[i];
 }
 
 //This function prints an array of vectors to std::out.
-void show_vec (Vector vec [SIZE])
+void show_vec (Vector vec [])
 {
   for (unsigned i = 0; i < SIZE; i++)
     std::cout << vec[i].y << " ";
   std::cout << "\n";
+}
+
+//This function prints Movement 'move' to std::out.
+void show_movement (Movement move)
+{
+  movement_mutex.lock();
+  
+  switch(move.servo)
+  { // NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER
+    case 1: std::cout <<  "BASE ";
+    case 2: std::cout <<  "LOWER_ARM ";
+    case 3: std::cout <<  "MIDDLE_ARM ";
+    case 4: std::cout <<  "HIGHER_ARM ";
+    case 5: std::cout <<  "ROTOR ";
+    case 6: std::cout <<  "GRABBER ";
+    default: std::cout << "NONE ";
+  }
+    
+  switch (move.gesture)
+  { // STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE
+    case 1: std::cout <<  "UP ";
+    case 2: std::cout <<  "DOWN ";
+    case 3: std::cout <<  "SWIPE_LEFT ";
+    case 4: std::cout <<  "SWIPE_RIGHT ";
+    case 5: std::cout <<  "GRAB ";
+    case 6: std::cout <<  "RELEASE ";
+    default: std::cout << "STILL ";
+  }
+    
+  std::cout << std::endl;
+  
+  movement_mutex.unlock();
 }
 
 //This function checks if the current vector has positions of the
@@ -108,11 +145,11 @@ bool check_x_direction(bool dir)
      const float OFFSET = 3.00;
 
      if ( dir ){ //True stays for SWIPE_RIGHT
-       if (x1  > x2 + OFFSET ||  std::abs(x1 - x2)  < OFFSET )
+       if (x1  > x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
          return false;
     
      }else{ //False stays for SWIPE_LEFT
-        if (x1  < x2 + OFFSET ||  std::abs(x1 - x2)  < OFFSET )
+       if (x1  < x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
            return false;
      }
   }
@@ -128,49 +165,69 @@ CustomGesture detect_right_gesture(Hand hand, int fingers )
   CustomGesture gest = STILL;
   if (hand.isRight() && !is_empty(rightHandPositions[SIZE-1]))
   {
-    if (fingers == 2 || fingers == 3 || fingers == 4)
-    {  
+    if (fingers == 0){ //No movements are sent; possible to reposition hand.
+      gest =  STILL;
+    }    
+    else if (fingers == 2 || fingers == 3 || fingers == 4) //When the specified amount of fingers is used,
+    {                                                      //it is possible to move the related robot-arms up and down.  
       if (check_y_direction(true)) {
-	std::cout <<  "UP \n";
 	gest =  UP;
       }
 
       else if (check_y_direction(false)) {
-	std::cout <<  "DOWN \n";
 	gest =  DOWN;
       }
-    
-    }
-    else if (fingers == 0){
-      std::cout << "REPLACING RIGHT HAND\n";
-      gest =  STILL;
-    }
-    
-    else {
+    }    
+    else { //This considers cases with 1 or 5 stretched fingers.
       if (check_x_direction(true)){
-	std::cout << "SWIPE RIGHT \n";
 	gest = SWIPE_RIGHT;
       }
       else if (check_x_direction (false)){
-	std::cout << "SWIPE LEFT\n";
 	gest =  SWIPE_LEFT;
       }
     }
-  }
 
   //Needed to empty global vector and store new frames.
   //This prevent circular buffer to consider previous data.
   rightHandPosIndex = 0;
   copy_vec (EMPTY, rightHandPositions);
+  }
+ 
+  return gest;
+}
+
+//This function detects movement of the left hand and checks if
+//movements GRAB and RELEASE are set.
+CustomGesture detect_left_gesture(Hand hand, int fingers )
+{
+   //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
+  CustomGesture gest = STILL;
+  
+  if (hand.isLeft() && !is_empty(leftHandPositions[SIZE-1]))
+  { 
+    switch (fingers)
+    {
+    case 5:  gest = RELEASE;
+    case 0:  gest = GRAB;
+    default: gest = STILL;
+    }
+
+    leftHandPosIndex = 0;
+    copy_vec (EMPTY, leftHandPositions);
+  }
   
   return gest;
 }
 
-Servo detect_right_servo (int fingers, CustomGesture gesture){
-
+//This function uses the amount of fingers and the gesture to assign
+//the correct servo of the right hand.
+Servo detect_right_servo (int fingers, CustomGesture gesture)
+{
   if ( gesture == SWIPE_LEFT || gesture == SWIPE_RIGHT )
-    return BASE;
-
+  {
+    if (fingers == 5){return BASE;}
+    else if (fingers == 1) {return ROTOR;}
+  }
   switch (fingers)
   {
     case 2 :
@@ -182,43 +239,20 @@ Servo detect_right_servo (int fingers, CustomGesture gesture){
     case 4:
       return HIGHER_ARM;
     
-    default : return NONE;
+    default: return NONE;
   }
-
-  return NONE;
-  
 }
 
-//This function assigns the correct hand to hands 'left' and 'right'
-//and it sets some statistics of these hands.
-void assign_hands(const Hand hand, Hand left, Hand right, Vector
-                  &right_pos, Vector &left_pos)
+//This function starts processing data of the right hand.
+void handle_right (Hand hand)
 {
-   if (hand.isLeft())
-   {
-     left = hand;
-     FingerList l_fingers = hand.fingers();
-     FingerList stretched_fingers = l_fingers.extended();
-
-     leftHandPositions[leftHandPosIndex++] = left.palmPosition();
-     leftHandPosIndex = leftHandPosIndex % SIZE;      //Circular buffer
-     
-     left_pos = left.palmPosition();
-   }
-    
-   if (hand.isRight())
-   {
-     right = hand;
-     
-     FingerList r_fingers = hand.fingers();
+     Hand right = hand;
+     FingerList r_fingers = right.fingers();
      int stretched_fingers = r_fingers.extended().count();
-     Movement current_mov;
-     current_mov.gesture = STILL;
-     current_mov.servo = NONE;
+     Movement current_mov = {STILL, NONE};
 
      //Detect movement
-     std::mutex mutex; //Needed because inner class is actually executed in different tread.
-     mutex.lock();
+     r_buffer_mutex.lock();
 
      if ( rightHandPosIndex < SIZE ){rightHandPositions[rightHandPosIndex++] = right.palmPosition();}
      
@@ -228,19 +262,51 @@ void assign_hands(const Hand hand, Hand left, Hand right, Vector
        current_mov.servo = detect_right_servo (stretched_fingers, current_mov.gesture);
      }
 
-     mutex.unlock();
-       
-   }
+     //     show_movement(current_mov);
+     
+     r_buffer_mutex.unlock();
 }
 
+//This function starts processing data of the left hand.
+void handle_left( Hand hand)
+{
+  Hand left = hand;
+  FingerList l_fingers = left.fingers();
+  int stretched_fingers = l_fingers.extended().count();
+  Movement current_mov = {STILL, GRABBER};
+
+  //Detect movement
+  l_buffer_mutex.lock();
+
+  if ( leftHandPosIndex < SIZE ){leftHandPositions[leftHandPosIndex++] = left.palmPosition();}
+     
+  else if (leftHandPosIndex == SIZE)
+  {
+    current_mov.gesture = detect_left_gesture(left, stretched_fingers);
+  }
+
+  show_movement(current_mov);
+  
+  l_buffer_mutex.unlock();
+}
+
+//This function assigns the correct hand to hands 'left' and 'right'
+//and it sets some statistics of these hands.
+void assign_hands(const Hand hand)
+{
+  if (hand.isLeft())
+    handle_left(hand);
+    
+  if (hand.isRight())
+    handle_right(hand);
+}
 
 //This function checks the amount of hands captured by the Leap Motion
 //and stores in the vectors the positions of the detected hands.
-void update_hands_position(const Frame &frame, Vector &right_pos, Vector &left_pos)
+void update_hands_position(const Frame &frame)
 {
   int hands_amount = frame.hands().count();
   HandList hands = frame.hands();
-  Hand firstHand, secondHand, left, right;
 
   switch (hands_amount)
   {
@@ -248,18 +314,22 @@ void update_hands_position(const Frame &frame, Vector &right_pos, Vector &left_p
        return;
        
      case 1:
-       assign_hands(hands[0], left, right, right_pos, left_pos);
-       break;
+     {
+        assign_hands(hands[0]);
+        break;
+     }
 
      case 2:
-       assign_hands(hands[0], left, right, right_pos, left_pos);
-       assign_hands(hands[1], left, right, right_pos, left_pos);
+     {
+       assign_hands(hands[0]);
+       assign_hands(hands[1]);
        break;
+     }
   }
 }
 
 //This function sets up parameters for optimizing energy consumption.
-void set_up_configuration(Controller controller){
+void set_up_configuration(Controller & controller){
   //Setting images off.
   std::cout << "Disabling images because not needed and required to enter in power-saver mode... ";
   controller.config().setInt32("tracking_images_mode", 0);
@@ -336,13 +406,8 @@ void SampleListener::onConnect(const Controller &controller)
 
 void SampleListener::onFrame(const Controller& controller)
 {
-  
   const Frame frame = controller.frame();
-
-  Vector right_pos, left_pos;
-    
-  update_hands_position(frame, right_pos, left_pos);
-
+  update_hands_position(frame);
 }
 
 void set_up_controller (Controller &controller)
@@ -360,7 +425,7 @@ int main(int argc, char** argv) {
     Controller controller; //This object connects automatically to the
                            //Leap motion daemon. Tracking data can be 
                            //done by using the Controller::frame()
-                           // method.
+                           //method.
     
     std::cout << "Waiting for connection...\n";
 
