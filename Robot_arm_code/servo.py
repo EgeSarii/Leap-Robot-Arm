@@ -3,14 +3,14 @@ import time
 
 import machine
 
-class Arm:
+class Servo:
     def __init__(self,sm_id, pin, angle):
         self.id = sm_id
         self.pin = pin
         self.servo = PIO_SERVO(self.id, self.pin)
         self.servo.set_angle(angle)
         self.default_angle = angle
-        print("Arm {} initialized".format(sm_id))
+        print("Servo {} initialized".format(sm_id))
     
     def set_angle(self, angle):
         self.servo.set_angle(angle)
@@ -18,12 +18,12 @@ class Arm:
     def get_angle(self):
         return self.servo.get_angle()
     
-    def test_arm(self):
+    def test_servo(self):
         """
-        A tester function for arm. It tests the servo by changing the angle in all possible ways.
+        A tester function for servo. It tests the servo by changing the angle in all possible ways.
 
         Args:
-            self: The arm/servo that is going to be tested.
+            self: The servo that is going to be tested.
         """
         while 1:
             for i in range(-90, 90):
@@ -34,29 +34,29 @@ class Arm:
             
     
 
-def test_arm_1_and_2(arm1:Arm, arm2:Arm):
+def test_servo_1_and_2(servo1:Servo, servo2:Servo):
     """
-    A tester function to test the base servo (Arm1) and the second servo(Arm2).
+    A tester function to test the base servo (Servo1) and the second servo(Servo2).
 
     Args:
-        arm1 (Arm): The base servo with PIN 16
-        arm2 (Arm): The second servo with PIN 17.
+        servo1 (Servo): The base servo with PIN 16
+        servo2 (Servo): The second servo with PIN 17.
     """
     
     while 0:
         time.sleep(3)
     while 1:
-        arm1.set_angle(0)
+        servo1.set_angle(0)
         time.sleep(1)
-        arm2.set_angle(90)
+        servo2.set_angle(90)
         time.sleep(1)
-        arm1.set_angle(45)
+        servo1.set_angle(45)
         time.sleep(1)
-        arm2.set_angle(45)
+        servo2.set_angle(45)
         time.sleep(1)
-        arm1.set_angle(90)
+        servo1.set_angle(90)
         time.sleep(1)
-        arm2.set_angle(0)
+        servo2.set_angle(0)
         time.sleep(1)
 
             
@@ -65,30 +65,30 @@ def go_get_it():
     A grab and leave function for our further work. It grabs a piece of paper from a 
     proper position. Then it takes the paper to a wanted position.
     """
-    arm1 = Arm(0,16)
-    arm2 = Arm(1, 17)
-    arm3 = Arm(2, 18)
-    arm4 = Arm(3, 19)
-    arm5 = Arm(4,20)
-    arm6 = Arm(5,21)
+    servo1 = Servo(0,16)
+    servo2 = Servo(1, 17)
+    servo3 = Servo(2, 18)
+    servo4 = Servo(3, 19)
+    servo5 = Servo(4,20)
+    servo6 = Servo(5,21)
     
     
-    arm1.set_angle(-90)
+    servo1.set_angle(-90)
     time.sleep(1)
-    arm2.set_angle(60)
+    servo2.set_angle(60)
     time.sleep(1)
-    arm3.set_angle(90)
+    servo3.set_angle(90)
     time.sleep(1)
-    arm4.set_angle(50)
+    servo4.set_angle(50)
     time.sleep(1)
-    arm5.set_angle(0)
+    servo5.set_angle(0)
     time.sleep(1)
-    arm6.set_angle(-90)
+    servo6.set_angle(-90)
     time.sleep(2)
-    arm6.set_angle(0)
+    servo6.set_angle(0)
     time.sleep(1)
-    arm2.set_angle(0)
+    servo2.set_angle(0)
     time.sleep(1)
-    arm1.set_angle(30)
+    servo1.set_angle(30)
     time.sleep(1)
-    arm6.set_angle(-90)
+    servo6.set_angle(-90)
