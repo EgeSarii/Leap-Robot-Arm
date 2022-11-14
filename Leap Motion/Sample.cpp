@@ -13,11 +13,11 @@ using namespace Leap;
     #############
 */
 
-//Enumeration of 7 servos in robot-arm;
-enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
-
 //Enumeration of possible Gestures to be detected.
 enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE};
+
+//Enumeration of 7 servos in robot-arm;
+enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
 
 //Data structure used to return a combination of Gesture for a
 //specific servo of the Raspberry Pi.
@@ -85,24 +85,24 @@ void show_movement (Movement move)
   
   switch(move.servo)
   { // NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER
-    case 1: std::cout <<  "BASE ";
-    case 2: std::cout <<  "LOWER_ARM ";
-    case 3: std::cout <<  "MIDDLE_ARM ";
-    case 4: std::cout <<  "HIGHER_ARM ";
-    case 5: std::cout <<  "ROTOR ";
-    case 6: std::cout <<  "GRABBER ";
-    default: std::cout << "NONE ";
+  case 1: {std::cout <<  "BASE "; break;}
+  case 2: {std::cout <<  "LOWER_ARM "; break;}
+  case 3: {std::cout <<  "MIDDLE_ARM "; break;}
+  case 4: {std::cout <<  "HIGHER_ARM "; break;}
+  case 5: {std::cout <<  "ROTOR "; break;}
+  case 6: {std::cout <<  "GRABBER "; break;}
+  default: {std::cout << "NONE "; break;}
   }
     
   switch (move.gesture)
   { // STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE
-    case 1: std::cout <<  "UP ";
-    case 2: std::cout <<  "DOWN ";
-    case 3: std::cout <<  "SWIPE_LEFT ";
-    case 4: std::cout <<  "SWIPE_RIGHT ";
-    case 5: std::cout <<  "GRAB ";
-    case 6: std::cout <<  "RELEASE ";
-    default: std::cout << "STILL ";
+  case 1: {std::cout <<  "UP "; break;}
+  case 2:{ std::cout <<  "DOWN "; break;}
+  case 3: {std::cout <<  "SWIPE_LEFT "; break;}
+  case 4: {std::cout <<  "SWIPE_RIGHT "; break;}
+  case 5: {std::cout <<  "GRAB "; break;}
+  case 6: {std::cout <<  "RELEASE "; break;}
+  default: {std::cout << "STILL "; break;}
   }
     
   std::cout << std::endl;
@@ -207,9 +207,9 @@ CustomGesture detect_left_gesture(Hand hand, int fingers )
   { 
     switch (fingers)
     {
-    case 5:  gest = RELEASE;
-    case 0:  gest = GRAB;
-    default: gest = STILL;
+    case 5: { gest = RELEASE; break;}
+    case 0: { gest = GRAB; break;}
+    default:{ gest = STILL; break;}
     }
 
     leftHandPosIndex = 0;
@@ -421,6 +421,7 @@ void set_up_controller (Controller &controller)
 }
 
 int main(int argc, char** argv) {
+  
     SampleListener listener;
     Controller controller; //This object connects automatically to the
                            //Leap motion daemon. Tracking data can be 
@@ -438,6 +439,6 @@ int main(int argc, char** argv) {
 
     // Remove the sample listener when done
     controller.removeListener(listener);
-    
+
     return 0;
 }
