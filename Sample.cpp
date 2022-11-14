@@ -12,10 +12,22 @@ using namespace Leap;
     # CONSTANTS #
     #############
 */
+
+//Enumeration of 7 servos in robot-arm;
+enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
+
+//Enumeration of possible Gestures to be detected.
+enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, ROT_CLOCKWISE, ROT_ANTICLOCKWISE };
+
+//Data structure used to return a combination of Gesture for a
+//specific Servo.
+struct Movement {
+  Servo servo;
+  CustomGesture gesture;
+};
+
 const unsigned SIZE = 10; //Constant size to allow compilation of fixed arrays in C++.
 const Vector EMPTY[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
-
-//ENUMERATION OF GESTURES (to be added)
 
 /*
     ####################
@@ -62,7 +74,7 @@ void show_vec (Vector vec [SIZE])
 }
 
 //This function checks if the current vector has positions of the
-//y-axis which increase. In this case the movement UP is detected.
+//y-axis which in/de-creases. In this case the movement UP/DOWN is detected.
 bool check_y_direction(bool dir)
 { 
   for (unsigned i = 0; i < SIZE-1; i++){
@@ -84,28 +96,102 @@ bool check_y_direction(bool dir)
   return true;
 }
 
-//This function is used to detect and classify custom gestures.
-void detect_custom_movements(Hand hand, int fingers )
+//This function checks if the current vector has positions of the
+//x-axis which in/de-creases. In this case the movement
+//SWIPE_RIGHT/LEFT is detected.
+bool check_x_direction(bool dir)
+{ 
+  for (unsigned i = 0; i < SIZE-1; i++){
+    
+     float x1 = std::abs(rightHandPositions[i].x);
+     float x2 = std::abs(rightHandPositions[i+1].x);
+     const float OFFSET = 3.00;
+
+     if ( dir ){ //True stays for SWIPE_RIGHT
+       if (x1  > x2 + OFFSET ||  std::abs(x1 - x2)  < OFFSET )
+         return false;
+    
+     }else{ //False stays for SWIPE_LEFT
+        if (x1  < x2 + OFFSET ||  std::abs(x1 - x2)  < OFFSET )
+           return false;
+     }
+  }
+  
+  return true;
+}
+
+//This function is used to detect and classify custom gestures of the
+//right hand.
+CustomGesture detect_right_gesture(Hand hand, int fingers )
 {
-  //RIGHT HAND IS USED FOR MOVEMENTS OF ROBOT
+   //RIGHT HAND IS USED FOR MOVEMENTS OF ARMS OF ROBOT.
+  CustomGesture gest = STILL;
   if (hand.isRight() && !is_empty(rightHandPositions[SIZE-1]))
   {
-    if (fingers == 5)
+    if (fingers == 2 || fingers == 3 || fingers == 4)
     {  
-      if (check_y_direction(true)) {std::cout <<  "UP \n";}
+      if (check_y_direction(true)) {
+	std::cout <<  "UP \n";
+	gest =  UP;
+      }
 
-      else if (check_y_direction(false)) {std::cout <<  "DOWN \n";}
+      else if (check_y_direction(false)) {
+	std::cout <<  "DOWN \n";
+	gest =  DOWN;
+      }
     
-      rightHandPosIndex = 0;
-      copy_vec (EMPTY, rightHandPositions);
     }
-    else {std::cout << "REPLACING RIGHT HAND\n";}
+    else if (fingers == 0){
+      std::cout << "REPLACING RIGHT HAND\n";
+      gest =  STILL;
+    }
+    
+    else {
+      if (check_x_direction(true)){
+	std::cout << "SWIPE RIGHT \n";
+	gest = SWIPE_RIGHT;
+      }
+      else if (check_x_direction (false)){
+	std::cout << "SWIPE LEFT\n";
+	gest =  SWIPE_LEFT;
+      }
+    }
   }
+
+  //Needed to empty global vector and store new frames.
+  //This prevent circular buffer to consider previous data.
+  rightHandPosIndex = 0;
+  copy_vec (EMPTY, rightHandPositions);
+  
+  return gest;
+}
+
+Servo detect_right_servo (int fingers, CustomGesture gesture){
+
+  if ( gesture == SWIPE_LEFT || gesture == SWIPE_RIGHT )
+    return BASE;
+
+  switch (fingers)
+  {
+    case 2 :
+      return LOWER_ARM;
+
+    case 3 :
+      return MIDDLE_ARM;
+
+    case 4:
+      return HIGHER_ARM;
+    
+    default : return NONE;
+  }
+
+  return NONE;
+  
 }
 
 //This function assigns the correct hand to hands 'left' and 'right'
 //and it sets some statistics of these hands.
-void assign_hands(const Hand hand, Hand &left, Hand &right, Vector
+void assign_hands(const Hand hand, Hand left, Hand right, Vector
                   &right_pos, Vector &left_pos)
 {
    if (hand.isLeft())
@@ -123,19 +209,30 @@ void assign_hands(const Hand hand, Hand &left, Hand &right, Vector
    if (hand.isRight())
    {
      right = hand;
+     
      FingerList r_fingers = hand.fingers();
-     FingerList stretched_fingers = r_fingers.extended();
+     int stretched_fingers = r_fingers.extended().count();
+     Movement current_mov;
+     current_mov.gesture = STILL;
+     current_mov.servo = NONE;
 
+     //Detect movement
      std::mutex mutex; //Needed because inner class is actually executed in different tread.
      mutex.lock();
 
-     if ( rightHandPosIndex < SIZE ){ rightHandPositions[rightHandPosIndex++] = right.palmPosition();}
-     else if (rightHandPosIndex == SIZE){detect_custom_movements(right, stretched_fingers.count());}
+     if ( rightHandPosIndex < SIZE ){rightHandPositions[rightHandPosIndex++] = right.palmPosition();}
      
+     else if (rightHandPosIndex == SIZE)
+     {
+       current_mov.gesture = detect_right_gesture(right, stretched_fingers);
+       current_mov.servo = detect_right_servo (stretched_fingers, current_mov.gesture);
+     }
+
      mutex.unlock();
-     
+       
    }
 }
+
 
 //This function checks the amount of hands captured by the Leap Motion
 //and stores in the vectors the positions of the detected hands.
@@ -158,55 +255,6 @@ void update_hands_position(const Frame &frame, Vector &right_pos, Vector &left_p
        assign_hands(hands[0], left, right, right_pos, left_pos);
        assign_hands(hands[1], left, right, right_pos, left_pos);
        break;
-  }
-}
-
-
-//This function detects some gestures that are part of the Leap Motion
-//API.
-
-/*
-   THIS SHOULD BE RETURN AN INT; WHICH CAN BE MAPPED TO A SPECIFIC
-   ACTION IN THE ROBOT.
-*/
-void detect_movement(const Frame &frame)
-{  
-  GestureList gestures = frame.gestures();
-  int32_t current_id;
-    
-  if (gestures.count() > 0) { current_id = gestures[0].id(); }
-  
-  for(Leap::GestureList::const_iterator gl = gestures.begin(); gl != frame.gestures().end(); gl++)
-  {
-    const int32_t next_id  = (*gl).id();
-    std::cout << gestures.count() << "\n";
-    
-    if ( current_id != next_id )
-    {
-      switch ((*gl).type()) {
-          case Gesture::TYPE_CIRCLE:
-            //Handle circle gesture
-	    std::cout << "CIRCLE!\n";
-            break;
-	  
-          case Gesture::TYPE_KEY_TAP:
-            //Handle key tap gestures
-  	    std::cout << "TYPE KEY!\n";
-            break;
-	  
-          case Gesture::TYPE_SWIPE:
-            //Handle swipe gestures
-	    std::cout << "SWIPE!\n" ;
-            break;
-	  
-          default:
-            //Handle unrecognized gestures
-	    std::cout << "MOVEMENT NOT RECOGNIZED.\n";
-            break;
-       }
-    }
-      
-    current_id = next_id;
   }
 }
 
