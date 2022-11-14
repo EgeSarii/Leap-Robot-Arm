@@ -1,4 +1,4 @@
-* INTRODUCTION*
+* INTRODUCTION
 This text is related to the installation of the Leap Motion device on
 a Linux machine. Both members of our team are using such a system.
 
@@ -20,7 +20,7 @@ both systems:
 : Ubuntu 22.04 LTS
 
 
-* INSTALLATION PROCESS*
+* INSTALLATION PROCESS
 The following will be installed:
 
      1. libgl1-mesa-glx := 3-D graphic library with integrated API
@@ -43,7 +43,7 @@ Now install the .deb file:
 : sudo dpkg -i Leap-2.3.1+31549-x64.deb
 
 
-* SET-UP PROCESS*
+* SET-UP PROCESS
 In the downloaded package the Leap Motion Controller is implemented as
 a daemon. Because of this, an issue occurs.
 The issue is that the package "leap" looks for the initialization file
@@ -87,7 +87,7 @@ This can be done with the line:
 : sudo ln -s /lib/systemd/system/leapd.service /etc/systemd/system/leapd.service 
 
 
-* STARTING THE LEAP MOTION*
+* STARTING THE LEAP MOTION
 Because leap runs as a daemon, few actions must be taken to start the
 daemon and connect the Leap Motion Controller.
 
@@ -95,12 +95,14 @@ To start the daemon run the following:
 : sudo systemctl daemon-reload
 : sudo service leapd start
 : sudo leapd
+: sudo LeapControlPanel
 
 at this point the leap motion is associated and the controller can be
 used.
 To test it run either the Visualizer or Playground applications.
 
-* SETTING UP A PROJECT*
+
+* SETTING UP A PROJECT
 We choose to use the C++ programming language to program our system.
 
 The Leap Motion API allows other languages; those are: Python, Java,
