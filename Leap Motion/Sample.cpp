@@ -4,9 +4,11 @@
 #include <string.h>
 #include <mutex>
 #include "Leap.h"
-
+#include <string.h>
+#include <fcntl.h> // Contains file controls like O_RDWR
+#include <errno.h> // Error integer and strerror() function
+#include <termios.h> // Contains POSIX terminal control definitions
 using namespace Leap;
-
 /*
     #############
     # CONSTANTS #
@@ -24,6 +26,8 @@ const unsigned SIZE = 10; //Constant size to allow compilation of fixed arrays i
 //EMPTY array of Leap::vectors to clean buffer.
 const Vector EMPTY[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
 
+//Initialization of the serial
+int serial = 0;
 /*
    #######################
    ## CUSTOM DATA TYPES ##
@@ -83,33 +87,105 @@ void copy_vec (const Vector original [], Vector copy [])
 }
 
 //This function prints Movement 'move' to std::out.
-void show_movement (Movement move)
+std::string show_movement (Movement move)
 {
   movement_mutex.lock();
+  std::string message ;
   
   switch(move.servo)
   {
-  case 1: {std::cout <<  "BASE "; break;}
-  case 2: {std::cout <<  "LOWER_ARM "; break;}
-  case 3: {std::cout <<  "MIDDLE_ARM "; break;}
-  case 4: {std::cout <<  "HIGHER_ARM "; break;}
-  case 5: {std::cout <<  "ROTOR "; break;}
-  case 6: {std::cout <<  "GRABBER "; break;}
-  default: {std::cout << "NONE "; break;}
+  case 1: {
+    unsigned char msg[6] = {'B','A','S','E',' '};
+    message = "BASE ";
+    break;
+    }
+  case 2: {
+    unsigned char msg[11] = {'L','O','W','E','R','_','A','R','M',' '};
+    message = "LOWER_ARM ";
+    
+    break;
+    }
+  case 3: {
+    unsigned char msg[12] = {'M','I','D','D','L','E','_','A','R','M',' '};
+    message = "MIDDLE_ARM " ;
+    
+    break;
+  }
+  case 4: {
+    unsigned char msg[12] = {'H','I','G','H','E','R','_','A','R','M',' '};
+    message = "HIGHER_ARM ";
+    
+    break;
+  }
+  case 5: {
+    unsigned char msg[7] = {'R','O','T','O','R',' '};
+    message = "ROTOR ";
+    
+    break;
+  }
+  case 6: {
+    unsigned char msg[9] = {'G','R','A','B','B','E','R',' '};
+    message = "GRABBER ";
+    
+    break;
+  }
+  default: {
+    unsigned char msg[6] = {'N','O','N','E',' '};
+    message = "NONE ";
+    
+    break;
+  }
   }
     
   switch (move.gesture)
   {
-  case 1: {std::cout <<  "UP "; break;}
-  case 2:{ std::cout <<  "DOWN "; break;}
-  case 3: {std::cout <<  "SWIPE_LEFT "; break;}
-  case 4: {std::cout <<  "SWIPE_RIGHT "; break;}
-  case 5: {std::cout <<  "GRAB "; break;}
-  case 6: {std::cout <<  "RELEASE "; break;}
-  default: {std::cout << "STILL "; break;}
+  case 1: {
+    unsigned char msg[4] = {'U','P',' '};
+    message = message + "UP ";
+    
+    break;
+  }
+  case 2:{ 
+    unsigned char msg[6] = {'D','O','W','N',' '};
+    message = message + "DOWN ";
+    
+    break;
+  }
+  case 3: {
+    unsigned char msg[12] = {'S','W','I','P','E','_','L','E','F','T',' '};
+    message = message + "SWIPE_LEFT ";
+    
+    break;
+  }
+  case 4: {
+    unsigned char msg[13] = {'S','W','I','P','E','_','R','I','G','H','T',' '};
+    message = message + "SWIPE_RIGHT ";
+    
+    break;
+  }
+  case 5: { 
+    unsigned char msg[6] = {'G','R','A','B',' '};
+    message = message + "GRAB ";
+    
+    break;
+  }
+  case 6: { 
+    unsigned char msg[9] = {'R','E','L','E','A','S','E',' '};
+    message = message + "RELEASE ";
+    
+    break;
+  }
+  default:{ 
+    unsigned char msg[7] = {'S','T','I','L','L',' '};
+    message = message + "STILL ";
+    
+    break;
+
+  }
   }
   
   movement_mutex.unlock();
+  return message;
 }
 
 //This function checks if the current vector has positions of the
@@ -301,7 +377,21 @@ void update_hands_position(const Frame &frame)
   int hands_amount = frame.hands().count();
   HandList hands = frame.hands();
   Movement robot_comand = {STILL, NONE};
+  std::string message ;
 
+  //std::string try1 = "HELLO TWO \r";
+  serial = open("/dev/ttyACM1", O_RDWR);
+    if ( serial < 0 )
+    {
+	    std::cout << "Error on serial port!"<<std::endl;
+      std::cout << serial;
+    }
+  //char* msg = (char*) try1.c_str();
+  //write(serial, msg, strlen(msg));
+  
+  //unsigned char hello[8] = {'H','E','L','L','O', ' ', 'F','\n'};
+  //write(serial,hello, sizeof(hello));
+  
   switch (hands_amount)
   {
      case 0:
@@ -310,7 +400,11 @@ void update_hands_position(const Frame &frame)
      case 1:
      {
         robot_comand = assign_hands(hands[0]);
-	show_movement(robot_comand);
+	      message = show_movement(robot_comand)+ "\r";
+        std::cout << message;
+
+        char* msg = (char*) message.c_str();
+        write(serial, msg, strlen(msg));
         std::cout << std::endl;
         break;
      }
@@ -318,10 +412,15 @@ void update_hands_position(const Frame &frame)
      case 2:
      {
        robot_comand = assign_hands(hands[0]);
-       show_movement(robot_comand);
+       message = show_movement(robot_comand);
+
        
        robot_comand = assign_hands(hands[1]);
-       show_movement(robot_comand);
+       message = message + (show_movement(robot_comand)) + "\r";
+       
+       char* msg = (char*) message.c_str();
+       write(serial, msg, strlen(msg));
+       std::cout << message;
        std::cout << std::endl;
        break;
      }
@@ -429,6 +528,9 @@ int main(int argc, char** argv) {
                            //method.
     
     std::cout << "Waiting for connection...\n";
+
+    //Checking if serial port is opened or not
+    
 
     set_up_controller(controller);
     controller.addListener(listener); //Adding instance of Listener class.

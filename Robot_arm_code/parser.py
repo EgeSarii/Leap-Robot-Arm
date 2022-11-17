@@ -19,7 +19,7 @@ def parse_input (input_serial:str, servos: list[Servo]):
     """
 
     parsed = input_serial.rstrip().split(" ")
-
+    
     if(len(parsed) ==2):
         parse_tuple(parsed, servos)
 
@@ -37,6 +37,7 @@ def parse_input (input_serial:str, servos: list[Servo]):
 
 
 def parse_left(gesture, left_servo):
+    print(gesture)
     if(gesture == "GRAB"):
         move_servo("pos", left_servo)
     elif(gesture == "RELEASE"):
@@ -46,7 +47,8 @@ def parse_left(gesture, left_servo):
 
 
 def parse_right(servo, gesture, servos):
-
+    print(servo)
+    print(gesture)
     if ( servo== "BASE"):
         if (gesture == "SWIPE_LEFT"):
             move_servo("pos", servos[0])
@@ -103,6 +105,11 @@ servo5 = Servo(4, 20, -30)
 servo6 = Servo(5, 21, 0)
 
 servo_list = [servo1, servo2, servo3, servo4, servo5, servo6]
+while(True):
+    
+    input_msg = sys.stdin.readline().strip()
+    if(input_msg != None):
+        print(input_msg)
 
+        parse_input(input_msg,servo_list)
 
-parse_input("LOWER_ARM UP GRABBER STILL",servo_list)
