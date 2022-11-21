@@ -3,12 +3,14 @@
 #include <iostream>
 #include <string.h>
 #include <mutex>
-#include "Leap.h"
 #include <string.h>
-#include <fcntl.h> // Contains file controls like O_RDWR
-#include <errno.h> // Error integer and strerror() function
-#include <termios.h> // Contains POSIX terminal control definitions
+#include <fcntl.h>   // Contains file controls like O_RDWR.
+#include <errno.h>   // Error integer and strerror() function.
+#include <termios.h> // Contains POSIX terminal control definitions.
+#include "Leap.h"
+
 using namespace Leap;
+
 /*
     #############
     # CONSTANTS #
@@ -21,13 +23,15 @@ enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE
 //Enumeration of servos in robot-arm;
 enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
 
-const unsigned SIZE = 10; //Constant size to allow compilation of fixed arrays in C++.
+//Location of serial device to be written.
+const std::string SERIAL_ID = "/dev/ttyACM1";
+
+//Size of circular buffer.
+const unsigned SIZE = 10;
 
 //EMPTY array of Leap::vectors to clean buffer.
-const Vector EMPTY[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
+const Vector EMPTY[SIZE] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
 
-//Initialization of the serial
-int serial = 0;
 /*
    #######################
    ## CUSTOM DATA TYPES ##
@@ -53,26 +57,28 @@ struct Movement {
 //given frame. This is used in order to compute gestures and catch
 //actions. Here Vector is a Leap::Vector; not std::vector.
 //This is used as a circular buffer of size SIZE.
-Vector rightHandPositions[10] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
+Vector rightHandPositions[SIZE] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
 
 //This variable is used to keep track of the indexes of such circular buffer.
 unsigned rightHandPosIndex = 0;
 
 //Mutex needed because inner class is actually executed in different tread.
-std::mutex movement_mutex; //Needed to correctly print commands to
-			   //serial and std::out. Without it we had
-			   //issues.
+std::mutex serial_mutex; //Needed to correctly print commands to
+			 //serial and std::out. Without it we had
+			 //issues.
 
 std::mutex r_buffer_mutex; //Mutex for ensure synchronization on
 			   //global variable 'rightHandPositions'.
 
+//This will obtain the process id once the function "open" is called.
+int serial = 0;
 /*
     ############################
     # GENERAL HELPER FUNCTIONS #
     ############################
 */
 
-//This function returns true if a vector contains all 0s; it is
+//This function returns true if a Leap::vector contains all 0s; it is
 //initialized but not modified.
 bool is_empty(Vector v)
 {
@@ -86,106 +92,63 @@ void copy_vec (const Vector original [], Vector copy [])
     copy[i] = original[i];
 }
 
-//This function prints Movement 'move' to std::out.
+//This function returns the string 'message' according to
+//'movement'. This message will be written on serial.
 std::string show_movement (Movement move)
 {
-  movement_mutex.lock();
-  std::string message ;
+  std::string message;
   
   switch(move.servo)
   {
-  case 1: {
-    unsigned char msg[6] = {'B','A','S','E',' '};
-    message = "BASE ";
-    break;
-    }
-  case 2: {
-    unsigned char msg[11] = {'L','O','W','E','R','_','A','R','M',' '};
-    message = "LOWER_ARM ";
-    
-    break;
-    }
-  case 3: {
-    unsigned char msg[12] = {'M','I','D','D','L','E','_','A','R','M',' '};
-    message = "MIDDLE_ARM " ;
-    
-    break;
-  }
-  case 4: {
-    unsigned char msg[12] = {'H','I','G','H','E','R','_','A','R','M',' '};
-    message = "HIGHER_ARM ";
-    
-    break;
-  }
-  case 5: {
-    unsigned char msg[7] = {'R','O','T','O','R',' '};
-    message = "ROTOR ";
-    
-    break;
-  }
-  case 6: {
-    unsigned char msg[9] = {'G','R','A','B','B','E','R',' '};
-    message = "GRABBER ";
-    
-    break;
-  }
-  default: {
-    unsigned char msg[6] = {'N','O','N','E',' '};
-    message = "NONE ";
-    
-    break;
-  }
+    case 1:  {message = "BASE ";       break;}
+    case 2:  {message = "LOWER_ARM ";  break;}
+    case 3:  {message = "MIDDLE_ARM "; break;}
+    case 4:  {message = "HIGHER_ARM "; break;}
+    case 5:  {message = "ROTOR ";      break;}
+    case 6:  {message = "GRABBER ";    break;}
+    default:  message = "NONE ";
   }
     
   switch (move.gesture)
   {
-  case 1: {
-    unsigned char msg[4] = {'U','P',' '};
-    message = message + "UP ";
-    
-    break;
-  }
-  case 2:{ 
-    unsigned char msg[6] = {'D','O','W','N',' '};
-    message = message + "DOWN ";
-    
-    break;
-  }
-  case 3: {
-    unsigned char msg[12] = {'S','W','I','P','E','_','L','E','F','T',' '};
-    message = message + "SWIPE_LEFT ";
-    
-    break;
-  }
-  case 4: {
-    unsigned char msg[13] = {'S','W','I','P','E','_','R','I','G','H','T',' '};
-    message = message + "SWIPE_RIGHT ";
-    
-    break;
-  }
-  case 5: { 
-    unsigned char msg[6] = {'G','R','A','B',' '};
-    message = message + "GRAB ";
-    
-    break;
-  }
-  case 6: { 
-    unsigned char msg[9] = {'R','E','L','E','A','S','E',' '};
-    message = message + "RELEASE ";
-    
-    break;
-  }
-  default:{ 
-    unsigned char msg[7] = {'S','T','I','L','L',' '};
-    message = message + "STILL ";
-    
-    break;
-
-  }
+    case 1:  {message += "UP ";          break;}
+    case 2:  {message += "DOWN ";        break;}
+    case 3:  {message += "SWIPE_LEFT ";  break;}
+    case 4:  {message += "SWIPE_RIGHT "; break;}
+    case 5:  {message += "GRAB ";        break;}
+    case 6:  {message += "RELEASE ";     break;}
+    default:  message += "STILL ";
   }
   
-  movement_mutex.unlock();
   return message;
+}
+
+//This function returns true iff serial is opened successfully. 
+bool open_serial (int & serial)
+{  
+  const char* msg = SERIAL_ID.c_str();
+  serial = open( msg, O_RDWR);
+    
+  if (serial < 0)
+  {
+    std::cout << "Error " << serial << " in opening serial '"
+              << SERIAL_ID << "'" << std::endl;
+      return false;
+   }
+  return true;
+}
+
+//This function converts string 'message' to char* and writes its
+//content to serial.
+void write_to_serial (std::string message)
+{
+  char* msg = (char*) message.c_str();
+  
+  serial_mutex.lock();
+  write(serial, msg, strlen(msg));
+  serial_mutex.unlock();
+
+  return;
 }
 
 //This function checks if the current vector has positions of the
@@ -220,7 +183,7 @@ bool check_x_direction(bool dir)
     
      float x1 = std::abs(rightHandPositions[i].x);
      float x2 = std::abs(rightHandPositions[i+1].x);
-     const float OFFSET = 3.00;
+     const float OFFSET = 2.00;
 
      if ( dir ){ //True stays for SWIPE_RIGHT
        if (x1  > x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
@@ -274,24 +237,19 @@ CustomGesture detect_right_gesture(Hand hand, int fingers )
   return gest;
 }
 
-//This function detects movement of the left hand and checks if
+//This function detects movement of the left hand: it checks if
 //movements GRAB and RELEASE are set.
 CustomGesture detect_left_gesture(Hand hand, int fingers )
-{
-   //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
-  CustomGesture gest = STILL;
-  
+{ //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
   if (hand.isLeft())
   { 
     switch (fingers)
     {
-    case 5: { gest = RELEASE; break;}
-    case 0: { gest = GRAB; break;}
-    default:{ gest = STILL; break;}
+      case 5:  return RELEASE;
+      case 0:  return GRAB;
     }
   }
-  
-  return gest;
+  return STILL;
 }
 
 //This function uses the amount of fingers and the gesture to assign
@@ -305,20 +263,15 @@ Servo detect_right_servo (int fingers, CustomGesture gesture)
   }
   switch (fingers)
   {
-    case 2 :
-      return LOWER_ARM;
-
-    case 3 :
-      return MIDDLE_ARM;
-
-    case 4:
-      return HIGHER_ARM;
-    
+    case 2 : return LOWER_ARM;
+    case 3 : return MIDDLE_ARM;
+    case 4 : return HIGHER_ARM;
     default: return NONE;
   }
 }
 
 //This function starts processing data of the right hand.
+//At the end of execution, the movement of the right hand is detected.
 Movement handle_right (Hand hand)
 {
      Hand right = hand;
@@ -343,6 +296,7 @@ Movement handle_right (Hand hand)
 }
 
 //This function starts processing data of the left hand.
+//At the end of execution, the movement of the left hand is detected.
 Movement handle_left( Hand hand)
 {
   Hand left = hand;
@@ -356,7 +310,7 @@ Movement handle_left( Hand hand)
 }
 
 //This function assigns the correct hand to hands 'left' and 'right'
-//and it sets some statistics of these hands.
+//and the respective movements.
 Movement assign_hands(const Hand hand)
 {
   Movement cur_movement = {STILL, NONE};
@@ -371,55 +325,42 @@ Movement assign_hands(const Hand hand)
 }
 
 //This function checks the amount of hands captured by the Leap Motion
-//and stores in the vectors the positions of the detected hands.
-void update_hands_position(const Frame &frame)
+//and writes to serial the respective movements.
+//The string written to serial is parsed to instruct the 6-DOF robot.
+void update_hands_position(const Frame &frame, int serial)
 {
   int hands_amount = frame.hands().count();
   HandList hands = frame.hands();
-  Movement robot_comand = {STILL, NONE};
-  std::string message ;
-
-  //std::string try1 = "HELLO TWO \r";
-  serial = open("/dev/ttyACM1", O_RDWR);
-    if ( serial < 0 )
-    {
-	    std::cout << "Error on serial port!"<<std::endl;
-      std::cout << serial;
-    }
-  //char* msg = (char*) try1.c_str();
-  //write(serial, msg, strlen(msg));
-  
-  //unsigned char hello[8] = {'H','E','L','L','O', ' ', 'F','\n'};
-  //write(serial,hello, sizeof(hello));
+  Movement robot_command = {STILL, NONE};
+  std::string message = "";
   
   switch (hands_amount)
   {
-     case 0:
+     case 0: //This should be never met by use of inner class SimpleListener.
        return;
        
      case 1:
      {
-        robot_comand = assign_hands(hands[0]);
-	      message = show_movement(robot_comand)+ "\r";
+        robot_command = assign_hands(hands[0]);
+        message = show_movement(robot_command)+ "\r";
         std::cout << message;
 
-        char* msg = (char*) message.c_str();
-        write(serial, msg, strlen(msg));
+        write_to_serial(message);
+	
         std::cout << std::endl;
         break;
      }
 
      case 2:
      {
-       robot_comand = assign_hands(hands[0]);
-       message = show_movement(robot_comand);
-
+       robot_command = assign_hands(hands[0]);
+       message = show_movement(robot_command);
        
-       robot_comand = assign_hands(hands[1]);
-       message = message + (show_movement(robot_comand)) + "\r";
+       robot_command = assign_hands(hands[1]);
+       message = message + (show_movement(robot_command)) + "\r";
        
-       char* msg = (char*) message.c_str();
-       write(serial, msg, strlen(msg));
+       write_to_serial(message);
+	
        std::cout << message;
        std::cout << std::endl;
        break;
@@ -506,17 +447,7 @@ void SampleListener::onConnect(const Controller &controller)
 void SampleListener::onFrame(const Controller& controller)
 {
   const Frame frame = controller.frame();
-  update_hands_position(frame);
-}
-
-void set_up_controller (Controller &controller)
-{
-   set_up_configuration(controller);
-    
-   controller.enableGesture(Gesture::TYPE_SWIPE, true);
-   controller.enableGesture(Gesture::TYPE_CIRCLE, true);
-   controller.enableGesture(Gesture::TYPE_KEY_TAP, true);
-    
+  update_hands_position(frame, serial);
 }
 
 int main(int argc, char** argv) {
@@ -526,20 +457,18 @@ int main(int argc, char** argv) {
                            //Leap motion daemon. Tracking data can be 
                            //done by using the Controller::frame()
                            //method.
+
+    if (!open_serial(serial)) {return 0;}
     
     std::cout << "Waiting for connection...\n";
 
-    //Checking if serial port is opened or not
-    
-
-    set_up_controller(controller);
     controller.addListener(listener); //Adding instance of Listener class.
    
-    // Keep this process running until Enter is pressed
+    // Keep this process running until Enter is pressed.
     std::cout << "Press Enter to quit..." << std::endl;
     std::cin.get();
 
-    // Remove the sample listener when done
+    // Remove the sample listener when done.
     controller.removeListener(listener);
 
     return 0;
