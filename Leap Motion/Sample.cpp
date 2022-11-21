@@ -24,7 +24,7 @@ enum CustomGesture { STILL = 0, UP, DOWN, SWIPE_LEFT, SWIPE_RIGHT, GRAB, RELEASE
 enum Servo { NONE = 0, BASE, LOWER_ARM, MIDDLE_ARM, HIGHER_ARM, ROTOR, GRABBER };
 
 //Location of serial device to be written.
-const std::string SERIAL_ID = "/dev/ttyACM1";
+const std::string SERIAL_ID = "/dev/ttyACM0";
 
 //Size of circular buffer.
 const unsigned SIZE = 10;

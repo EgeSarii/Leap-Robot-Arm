@@ -1,6 +1,7 @@
 import sys
 from servo import Servo
 from mover import move_servo
+import time
 
 
 def parse_input (input_serial:str, servos: list[Servo]):
@@ -37,13 +38,15 @@ def parse_input (input_serial:str, servos: list[Servo]):
 
 
 def parse_left(gesture, left_servo):
-    print(gesture)
+     #print(gesture)
     if(gesture == "GRAB"):
-        move_servo("pos", left_servo)
+        left_servo.set_angle(0)
     elif(gesture == "RELEASE"):
-        move_servo("neg", left_servo)
+        left_servo.set_angle(-90)
+    
     else:
-        move_servo("none", left_servo)
+        print("k")
+        pass
 
 
 def parse_right(servo, gesture, servos):
@@ -79,15 +82,19 @@ def parse_right(servo, gesture, servos):
             move_servo("neg", servos[3])
         else:
             move_servo("still", servos[3])
-    elif(right_servo == "ROTOR"):
+    elif(servo == "ROTOR"):
+    
         if(gesture == "SWIPE_LEFT"):
             move_servo("pos", servos[4])
         elif(gesture == "SWIPE_RIGHT"):
             move_servo("neg", servos[4])
         else:
             move_servo("still", servos[4])
+            
     else:
-        right_servo = None
+        pass
+    
+    
 
 def parse_tuple(tuple, servos):
     if(tuple[0] == "GRABBER"):
@@ -95,21 +102,53 @@ def parse_tuple(tuple, servos):
     else:
         parse_right(tuple[0], tuple[1] , servos)
         
-        
-# Initialize servos in a nice position
-servo1 = Servo(0, 16, 0)
-servo2 = Servo(1, 17, 90)
-servo3 = Servo(2, 18, -30)
-servo4 = Servo(3, 19, 0)
-servo5 = Servo(4, 20, -30)
-servo6 = Servo(5, 21, 0)
-
-servo_list = [servo1, servo2, servo3, servo4, servo5, servo6]
-while(True):
+def test_parser(servo_list):
+    msg1 = "GRABBER RELEASE"
+    msg2 = "GRABBER GRAB BASE SWIPE_LEFT"
+    msg3 = "GRABBER RELEASE LOWER_ARM UP" 
+    msg4 = "GRABBER GRAB HIGHER_ARM DOWN"
+    msg5 = "GRABBER RELEASE ROTOR SWIPE_LEFT"
+    msg6 = "BASE SWIPE_LEFT"
+    msg7 = "BASE SWIPE_RIGHT GRABBER GRAB"
+    msg8 = "ROTOR SWIPE_LEFT"
+    msg9 = "MIDDLE_ARM UP"
+    msg10 = "GRABBER GRAB"
     
-    input_msg = sys.stdin.readline().strip()
-    if(input_msg != None):
-        print(input_msg)
+    msg_list = [msg1, msg2, msg3, msg4, msg5, msg6, msg6, msg7, msg8,msg9, msg3, msg4]
+    msg_list2 = [msg1, msg10]
+    while(True):
+        for msg in msg_list2:
+            print(msg)
+            parse_input(msg, servo_list)
+            time.sleep(0.15)
+        
+def main():
+    
+    # Initialize servos in a nice position
+    servo1 = Servo(0, 16, 0)
+    servo2 = Servo(1, 17, 90)
+    servo3 = Servo(2, 18, -30)
+    servo4 = Servo(3, 19, 0)
+    servo5 = Servo(4, 20, -30)
+    servo6 = Servo(5, 21, 0)
+    time.sleep(1)
+    servo_list = [servo1, servo2, servo3, servo4, servo5, servo6]
+    
+    
+    while(True):
+        
+        test_parser(servo_list)
+        
+        '''
+        input_list = []
+        input_msg = sys.stdin.readline().strip()
+        if(input_msg != None):
+            print(input_msg)
+            input_list.add(input_msg)
+            
+            fst_input = input_li
+            parse_input(input_msg,servo_list)
+            #time.sleep(0.5)
+        '''
 
-        parse_input(input_msg,servo_list)
-
+main()

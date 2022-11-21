@@ -70,7 +70,7 @@ def go_get_it():
     servo3 = Servo(2, 18)
     servo4 = Servo(3, 19)
     servo5 = Servo(4,20)
-    servo6 = Servo(5,21)
+    
     
     
     servo1.set_angle(-90)
@@ -92,3 +92,5 @@ def go_get_it():
     servo1.set_angle(30)
     time.sleep(1)
     servo6.set_angle(-90)
+    
+    
