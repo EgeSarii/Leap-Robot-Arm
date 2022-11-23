@@ -21,3 +21,7 @@
 #### Week 8(7 November - 13 November)
 - The architecture of Leap Motion is adjusted for communication between Raspberry Pi Pico. 
 - Research is done to find a possible way of communication between Raspberry Pi Pico and the Leap Motion. General architecture for this communication is created.
+
+#### Week 9 (14 November- 20 November)
+- The communication between Leap Motion is established. It is tested and it is a working implementation. The implementation consists of two parts. The first part is to create a correct format of the message to send and create a connector to the Pico. The second part is to create a parser for the incoming messages from Leap Motion in Pico.
+- The code for Leap Motion is adjusted to be cleaner after the connectors established.
