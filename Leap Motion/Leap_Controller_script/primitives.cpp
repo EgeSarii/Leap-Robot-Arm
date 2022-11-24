@@ -57,7 +57,7 @@ std::string show_movement (Movement move)
     case 4:  {message = "HIGHER_ARM "; break;}
     case 5:  {message = "ROTOR ";      break;}
     case 6:  {message = "GRABBER ";    break;}
-    default:  message = "NONE ";
+    default:  message = "";
   }
     
   switch (move.gesture)
@@ -68,7 +68,7 @@ std::string show_movement (Movement move)
     case 4:  {message += "SWIPE_RIGHT "; break;}
     case 5:  {message += "GRAB ";        break;}
     case 6:  {message += "RELEASE ";     break;}
-    default:  message += "STILL ";
+    default:  message += "";
   }
 
   return message;
