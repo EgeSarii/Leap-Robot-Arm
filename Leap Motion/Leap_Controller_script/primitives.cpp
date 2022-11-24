@@ -134,7 +134,7 @@ bool check_x_direction(bool dir)
     
      float x1 = std::abs(rightHandPositions[i].x);
      float x2 = std::abs(rightHandPositions[i+1].x);
-     const float OFFSET = 2.00;
+     const float OFFSET = 0.4;
 
      if ( dir ){ //True stays for SWIPE_RIGHT
        if (x1  > x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
