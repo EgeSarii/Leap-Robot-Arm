@@ -45,4 +45,4 @@ removed and hence the Leap Motion Device can be "paused" from
 detecting new frames.
 After every write operation, a small time is left to the subsequent
 process and execution of the command. This time can be provided by
-calling the function /sleep()/.
+calling the function *sleep()*.
