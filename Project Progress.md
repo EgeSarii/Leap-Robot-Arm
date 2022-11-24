@@ -25,3 +25,24 @@
 #### Week 9 (14 November- 20 November)
 - The communication between Leap Motion is established. It is tested and it is a working implementation. The implementation consists of two parts. The first part is to create a correct format of the message to send and create a connector to the Pico. The second part is to create a parser for the incoming messages from Leap Motion in Pico.
 - The code for Leap Motion is adjusted to be cleaner after the connectors established.
+
+#### Week 10 (21 November - 27 November)
+- Work on communication between Leap Motion and Robot is improved. Latancy issues are checked and solve.
+The issue consisted in the Pico receiving inputs too quickly and hence the microprocessor was not able to set new positions before the new command was received.
+This was solved by:
+  1. Eliminating dummy commands {STILL, NONE} and sending less input.
+  2. Making the machine which processes the Leap motion frames sleep for a brief time and hence discard some new frames.
+
+Option 2) was implemented for the left_hand. In this hand there is no circular buffer (because no movements require a sequence of actions) and hence plenty of frames of the same command were detected.
+ By sleeping, most of  this duplicates were removed.
+
+An alternative is to implement another buffer to store commands and
+fil this buffer up before writing to serial.
+
+The writing operation occurs once this buffer is filled.
+During the writings, the listener attached to the Leap motion can be
+removed and hence the Leap Motion Device can be "paused" from
+detecting new frames.
+After every write operation, a small time is left to the subsequent
+process and execution of the command. This time can be provided by
+calling the function /sleep()/.
