@@ -76,6 +76,15 @@ Movement handle_left(Leap::Hand hand);
 Movement assign_hands(const Leap::Hand hand);
 
 
+//This function checks that the left hand buffer "left_hand_buffer" is
+//full of commands.
+bool left_buf_full();
+
+//This function returns true iff the left hand buffer is full.
+//In this case the index of such buffer is set to 0.
+//Otherwise the commands is added to the buffer.
+bool manage_left_buf(Movement move);
+
 //This function checks the amount of hands captured by the Leap Motion
 //and writes to serial the respective movements.
 //The string written to serial is parsed to instruct the 6-DOF robot.
