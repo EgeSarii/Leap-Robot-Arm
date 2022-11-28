@@ -24,3 +24,11 @@ def move_servo(inp:str, servo:Servo):
     
     print(servo.get_angle())
     
+def move_robot_to_initial(servo_list: list[Servo]):
+    
+    servo_list[0].set_angle(0)
+    servo_list[1].set_angle(90)
+    servo_list[2].set_angle(-30)
+    servo_list[3].set_angle(0)
+    servo_list[4].set_angle(-30)
+    servo_list[5].set_angle(0)
