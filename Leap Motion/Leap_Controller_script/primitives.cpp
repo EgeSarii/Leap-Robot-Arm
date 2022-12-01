@@ -110,8 +110,8 @@ bool check_y_direction(bool dir)
 {  
   for (unsigned i = 0; i < BUFSIZE-1; i++){
     
-     float y1 = std::abs(rightHandPositions[i].y);
-     float y2 = std::abs(rightHandPositions[i+1].y);
+     float y1 = rightHandPositions[i].y;
+     float y2 = rightHandPositions[i+1].y;
      const float OFFSET = 2.00;
 
      if ( dir ){ //True stays for UP
@@ -119,7 +119,7 @@ bool check_y_direction(bool dir)
          return false;
     
      }else{ //False stays for DOWN
-        if (y1  < y2 + OFFSET ||  std::abs(y1 - y2)  < OFFSET )
+        if (y1 + OFFSET  < y2 ||  std::abs(y1 - y2)  < OFFSET )
            return false;
      }
   }
@@ -134,16 +134,16 @@ bool check_x_direction(bool dir)
 { 
   for (unsigned i = 0; i < BUFSIZE-1; i++){
     
-     float x1 = std::abs(rightHandPositions[i].x);
-     float x2 = std::abs(rightHandPositions[i+1].x);
-     const float OFFSET = 0.4;
+     float x1 = rightHandPositions[i].x;   
+     float x2 = rightHandPositions[i+1].x; 
+     const float OFFSET = 0.5;
 
      if ( dir ){ //True stays for SWIPE_RIGHT
        if (x1  > x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
          return false;
     
      }else{ //False stays for SWIPE_LEFT
-       if (x1  < x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
+       if (x1 + OFFSET  < x2 || std::abs(x1 - x2)  < OFFSET )
            return false;
      }
   }
@@ -157,6 +157,7 @@ CustomGesture detect_right_gesture(Hand hand, int fingers )
 {
    //RIGHT HAND IS USED FOR MOVEMENTS OF ARMS OF ROBOT.
   CustomGesture gest = STILL;
+  
   if (hand.isRight() && !is_empty_vec(rightHandPositions[BUFSIZE-1]))
   {
     if (fingers == 0){ //No movements are sent; possible to reposition hand.
@@ -196,7 +197,7 @@ CustomGesture detect_left_gesture(Hand hand, int fingers )
 { //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
   if (hand.isLeft())
   {
-    sleep(0.85);
+    //sleep(0.85);
     switch (fingers)
     {
       case 5:  return RELEASE;
@@ -320,15 +321,13 @@ void update_hands_position(const Frame &frame)
      {
         robot_command = assign_hands(hands[0]);
         message = show_movement(robot_command)+ "\r";
-	//	std::cout << message;
 
 	if ((hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
 	{
 	  write_to_serial(message);
-	  std::cout << message;
+	  std::cout << message << std::endl;
 	}
-	    
-        std::cout << std::endl;
+
         break;
      }
 
@@ -349,8 +348,7 @@ void update_hands_position(const Frame &frame)
        message += "\r";
        write_to_serial(message);
 	
-       std::cout << message;
-       std::cout << std::endl;
+       std::cout << message << std::endl;
        
        break;
      }
