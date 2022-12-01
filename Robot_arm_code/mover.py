@@ -15,10 +15,12 @@ def move_servo(inp:str, servo:Servo):
         servo (Servo): The servo that is going to make movement.
     """
     init_angle = servo.get_angle()
-    if (inp == "pos"): 
-        servo.set_angle(init_angle -20)
+    if (inp == "pos"):
+        if(init_angle >= -85):
+            servo.set_angle(init_angle -5)
     elif (inp =="neg"):
-        servo.set_angle(init_angle +20)
+        if(init_angle <= 85):
+            servo.set_angle(init_angle +5)
     else:
         pass
     

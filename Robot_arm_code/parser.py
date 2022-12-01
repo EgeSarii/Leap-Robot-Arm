@@ -1,11 +1,12 @@
 import sys
 from servo import Servo
 from mover import move_servo
+from mover import move_robot_to_initial
 import time
 
 class Parser:
 
-    def parse_input (self, input_serial:str, servos: list[Servo]):
+    def parse_input (self,input_serial:str, servos: list[Servo]):
         
         #TODO : ADD A CONSTRAINT CHECK ABOUT INPUT SIZE
         """
@@ -36,7 +37,7 @@ class Parser:
         
 
 
-    def parse_left(gesture:str, left_servo:Servo):
+    def parse_left(self,gesture:str, left_servo:Servo):
         """Helper function to parse the message created for left hand commands.
 
         Args:
@@ -53,7 +54,7 @@ class Parser:
             pass
 
 
-    def parse_right(servo:Servo, gesture:str, servos: list[Servo]):
+    def parse_right(self,servo:Servo, gesture:str, servos: list[Servo]):
         """ 
         Helper function to parse the message created for right hand commands.
 
@@ -120,9 +121,10 @@ class Parser:
         """
         if(tuple[0] == "GRABBER"):
             self.parse_left(tuple[1], servos[5])
+        elif(tuple[0] == "GO"):
+            move_robot_to_initial(servos)
         else:
             self.parse_right(tuple[0], tuple[1] , servos)
-            
     def test_parser(self,servo_list: list[Servo]):
         """
         A tester function to test the parser for some messages.
@@ -149,4 +151,3 @@ class Parser:
                 print(msg)
                 self.parse_input(msg, servo_list)
                 time.sleep(0.15)
-        
