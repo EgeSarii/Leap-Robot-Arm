@@ -17,10 +17,10 @@ def move_servo(inp:str, servo:Servo):
     init_angle = servo.get_angle()
     if (inp == "pos"):
         if(init_angle >= -85):
-            servo.set_angle(init_angle -5)
+            servo.set_angle(init_angle -5) #TODO : OPTIMIZE ANGLE : 5 -> 2.5
     elif (inp =="neg"):
         if(init_angle <= 85):
-            servo.set_angle(init_angle +5)
+            servo.set_angle(init_angle +5) #TODO : OPTIMIZE ANGLE : 5 -> 2.5
     else:
         pass
     
