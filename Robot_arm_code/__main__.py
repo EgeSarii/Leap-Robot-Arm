@@ -5,9 +5,10 @@ import sys
 
 def main():
     
+    
+
+    #Initialize parser
     parser = Parser()
-
-
 
     # Initialize servos in a nice position
     servo1 = Servo(0, 16, 0)
@@ -29,6 +30,7 @@ def main():
             print(input_msg)
             parser.parse_input(input_msg,servo_list)
             #time.sleep(0.5)
+            
 
 
 if __name__ == "__main__":

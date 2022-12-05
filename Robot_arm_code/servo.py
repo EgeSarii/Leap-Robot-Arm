@@ -4,21 +4,21 @@ import time
 import machine
 
 class Servo:
-    def __init__(self,sm_id, pin, angle):
+    def __init__(self,sm_id:int, pin:int, angle:int)-> None:
         self.id = sm_id
         self.pin = pin
         self.servo = PIO_SERVO(self.id, self.pin)
         self.servo.set_angle(angle)
-        self.default_angle = angle
+        self.initial_angle = angle
         print("Servo {} initialized".format(sm_id))
     
-    def set_angle(self, angle):
+    def set_angle(self, angle)-> None:
         self.servo.set_angle(angle)
     
-    def get_angle(self):
+    def get_angle(self)-> int:
         return self.servo.get_angle()
     
-    def test_servo(self):
+    def test_servo(self) -> None:
         """
         A tester function for servo. It tests the servo by changing the angle in all possible ways.
 
@@ -34,7 +34,7 @@ class Servo:
             
     
 
-def test_servo_1_and_2(servo1:Servo, servo2:Servo):
+def test_servo_1_and_2(servo1:Servo, servo2:Servo)-> None:
     """
     A tester function to test the base servo (Servo1) and the second servo(Servo2).
 
@@ -60,7 +60,7 @@ def test_servo_1_and_2(servo1:Servo, servo2:Servo):
         time.sleep(1)
 
             
-def go_get_it():
+def go_get_it()-> None:
     """
     A grab and leave function for our further work. It grabs a piece of paper from a 
     proper position. Then it takes the paper to a wanted position.
