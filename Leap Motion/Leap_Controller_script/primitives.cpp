@@ -197,7 +197,6 @@ CustomGesture detect_left_gesture(Hand hand, int fingers )
 { //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
   if (hand.isLeft())
   {
-    //sleep(0.85);
     switch (fingers)
     {
       case 5:  return RELEASE;
@@ -223,6 +222,17 @@ Servo detect_right_servo (int fingers, CustomGesture gesture)
     case 4 : return HIGHER_ARM;
     default: return NONE;
   }
+}
+
+//This function detects a clapping movement.
+bool detect_clap(Hand hand_1, Hand hand_2)
+{
+  Vector vec_1 = hand_1.direction();
+  Vector vec_2 = hand_2.direction();
+  const int TOUCH = 1;
+  return std::abs(vec_1.x - vec_2.x) <= TOUCH &&
+         std::abs(vec_1.y - vec_2.y) <= TOUCH &&
+         std::abs(vec_1.z - vec_2.z) <= TOUCH; 
 }
 
 //This function starts processing data of the right hand.
@@ -333,6 +343,23 @@ void update_hands_position(const Frame &frame)
 
      case 2:
      {
+       
+// -------- Begin clapping part ----------
+       Hand hand_1 = hands[0];
+       Hand hand_2 = hands[1];
+
+       if ( detect_clap(hand_1, hand_2) )
+       {
+         write_to_serial("NONE CLAP\r");
+	 std::cout << "CLAP\nSleeping for 10 sec\n" << std::endl;
+	 sleep(10);
+	 std::cout << "Resuming\n";
+	 break;
+	 
+       }
+// -------- End clapping part ----------
+
+// -------- Begin actual movement detection part ----------
        robot_command = assign_hands(hands[0]);
        if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
        {
@@ -349,8 +376,6 @@ void update_hands_position(const Frame &frame)
        write_to_serial(message);
 	
        std::cout << message << std::endl;
-       
-       break;
      }
   }
 }
@@ -385,3 +410,4 @@ void set_up_configuration(Controller & controller){
   std::cout << "Configurations are saved.\n\n";
   controller.config().save();
 }
+

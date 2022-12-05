@@ -56,6 +56,10 @@ CustomGesture detect_right_gesture(Leap::Hand hand, int fingers );
 CustomGesture detect_left_gesture(Leap::Hand hand, int fingers );
 
 
+//This function detects a clapping movement.
+bool detect_clap(Leap::Hand hand_1, Leap::Hand hand_2);
+
+
 //This function uses the amount of fingers and the gesture to assign
 //the correct servo of the right hand.
 Servo detect_right_servo (int fingers, CustomGesture gesture);
