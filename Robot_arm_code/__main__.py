@@ -15,7 +15,7 @@ def main():
     servo3 = Servo(2, 18, -30)
     servo4 = Servo(3, 19, 0)
     servo5 = Servo(4, 20, -30)
-    servo6 = Servo(5, 21, 0)
+    servo6 = Servo(5, 21, -90)
     time.sleep(1)
     servo_list = [servo1, servo2, servo3, servo4, servo5, servo6]
     

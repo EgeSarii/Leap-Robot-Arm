@@ -1,11 +1,12 @@
 import sys
 from servo import Servo
 from mover import move_servo
+from mover import move_robot_to_initial
 import time
 
 class Parser:
 
-    def parse_input (self, input_serial:str, servos: list[Servo]):
+    def parse_input (self,input_serial:str, servos: list[Servo]):
         
         #TODO : ADD A CONSTRAINT CHECK ABOUT INPUT SIZE
         """
@@ -33,10 +34,26 @@ class Parser:
 
         else:
             print("Input format is not correct!")    
-        
+    
 
 
-    def parse_left(gesture:str, left_servo:Servo):
+    def parse_tuple(self,tuple:list[str], servos: list[Servo]):
+        """ 
+        Helper function to parse the tuple message. The first part of the tuple describes the servo
+        and the second part describes the gesture.
+
+        Args:
+            tuple (list[str]): The tuple with size 2, contains servo and the gesture.
+            servos (list[Servo]): The list that contains servos to be moved.
+        """
+        if(tuple[0] == "GRABBER"):
+            self.parse_left(tuple[1], servos[5])
+        elif(tuple[0] == "GO"):
+            move_robot_to_initial(servos)
+        else:
+            self.parse_right(tuple[0], tuple[1] , servos)
+
+    def parse_left(self,gesture:str, left_servo:Servo):
         """Helper function to parse the message created for left hand commands.
 
         Args:
@@ -53,7 +70,7 @@ class Parser:
             pass
 
 
-    def parse_right(servo:Servo, gesture:str, servos: list[Servo]):
+    def parse_right(self,servo:Servo, gesture:str, servos: list[Servo]):
         """ 
         Helper function to parse the message created for right hand commands.
 
@@ -71,14 +88,15 @@ class Parser:
             elif (gesture == "SWIPE_RIGHT"):
                 move_servo("neg", servos[0])
             else:
-                move_servo("still", servos[0])
+                pass
+
         elif(servo == "LOWER_ARM"):
             if(gesture == "UP"):
                 move_servo("pos", servos[1])
             elif(gesture == "DOWN"):
                 move_servo("neg", servos[1])
             else:
-                move_servo("still", servos[1])
+                pass
 
         elif(servo == "MIDDLE_ARM"):
             if(gesture == "UP"):
@@ -86,7 +104,7 @@ class Parser:
             elif(gesture == "DOWN"):
                 move_servo("neg", servos[2])
             else:
-                move_servo("still", servos[2])
+                pass
 
         elif(servo == "HIGHER_ARM"):
             if(gesture == "UP"):
@@ -94,7 +112,8 @@ class Parser:
             elif(gesture == "DOWN"):
                 move_servo("neg", servos[3])
             else:
-                move_servo("still", servos[3])
+                pass
+            
         elif(servo == "ROTOR"):
         
             if(gesture == "SWIPE_LEFT"):
@@ -102,27 +121,14 @@ class Parser:
             elif(gesture == "SWIPE_RIGHT"):
                 move_servo("neg", servos[4])
             else:
-                move_servo("still", servos[4])
+                pass
                 
         else:
             pass
         
         
 
-    def parse_tuple(self,tuple:list[str], servos: list[Servo]):
-        """ 
-        Helper function to parse the tuple message. The first part of the tuple describes the servo
-        and the second part describes the gesture.
-
-        Args:
-            tuple (list[str]): The tuple with size 2, contains servo and the gesture.
-            servos (list[Servo]): The list that contains servos to be moved.
-        """
-        if(tuple[0] == "GRABBER"):
-            self.parse_left(tuple[1], servos[5])
-        else:
-            self.parse_right(tuple[0], tuple[1] , servos)
-            
+    
     def test_parser(self,servo_list: list[Servo]):
         """
         A tester function to test the parser for some messages.
@@ -149,4 +155,3 @@ class Parser:
                 print(msg)
                 self.parse_input(msg, servo_list)
                 time.sleep(0.15)
-        
