@@ -31,7 +31,7 @@ class Mover:
         print(servo.get_angle())
 
 
-    def move_robot_to_initial(servo_list: list[Servo])-> None:
+    def move_robot_to_initial(self,servo_list: list[Servo])-> None:
         """
         Move robot to its initial positions by setting the angles of the servos to their 
         first initialised values.

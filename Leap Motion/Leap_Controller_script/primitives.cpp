@@ -229,7 +229,7 @@ bool detect_clap(Hand hand_1, Hand hand_2)
 {
   Vector vec_1 = hand_1.direction();
   Vector vec_2 = hand_2.direction();
-  const int TOUCH = 1;
+  const float TOUCH = 0.5;
   return std::abs(vec_1.x - vec_2.x) <= TOUCH &&
          std::abs(vec_1.y - vec_2.y) <= TOUCH &&
          std::abs(vec_1.z - vec_2.z) <= TOUCH; 

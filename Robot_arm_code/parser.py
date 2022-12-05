@@ -51,7 +51,7 @@ class Parser:
         """
         if(tuple[0] == "GRABBER"):
             self.parse_left(tuple[1], servos[5])
-        elif(tuple[0] == "GO" and tuple[1] ==HOME):
+        elif(tuple[0] == "GO" and tuple[1] =="HOME"):
             self.mover.move_robot_to_initial(servos)
         elif(tuple[0] == "NONE" and tuple[1] == "CLAP"):
             message = ("The coefficient for the movement angle is now {} .\n").format(self.mover.get_angle_coefficient())
