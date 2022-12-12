@@ -5,8 +5,6 @@ import sys
 
 def main():
     
-    
-
     #Initialize parser
     parser = Parser()
 
@@ -19,7 +17,6 @@ def main():
     servo6 = Servo(5, 21, -90)
     time.sleep(1)
     servo_list = [servo1, servo2, servo3, servo4, servo5, servo6]
-    
     
     while(True):
         

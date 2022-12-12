@@ -227,12 +227,20 @@ Servo detect_right_servo (int fingers, CustomGesture gesture)
 //This function detects a clapping movement.
 bool detect_clap(Hand hand_1, Hand hand_2)
 {
-  Vector vec_1 = hand_1.direction();
-  Vector vec_2 = hand_2.direction();
+  Hand left, right;
+  if( hand_1.isLeft()){left = hand_1; right = hand_2;}
+  else { left = hand_2 ; right = hand_1;}
+  
+  Vector vec_l = left.palmPosition();
+  Vector vec_r = right.palmPosition();
+  std::cout << vec_l <<"     "<< vec_r<<std::endl;
   const float TOUCH = 0.5;
-  return std::abs(vec_1.x - vec_2.x) <= TOUCH &&
-         std::abs(vec_1.y - vec_2.y) <= TOUCH &&
-         std::abs(vec_1.z - vec_2.z) <= TOUCH; 
+  
+  
+  
+  return std::abs(vec_r.x)  - std::abs(vec_l.x) <= TOUCH; //&&
+         //(vec_r.y - vec_l.y) <= TOUCH && (vec_r.y - vec_l.y) >= -TOUCH &&
+         //(vec_r.z - vec_l.z) <= TOUCH && (vec_r.z - vec_l.z) >= -TOUCH; 
 }
 
 //This function starts processing data of the right hand.
@@ -347,16 +355,17 @@ void update_hands_position(const Frame &frame)
 // -------- Begin clapping part ----------
        Hand hand_1 = hands[0];
        Hand hand_2 = hands[1];
-
        if ( detect_clap(hand_1, hand_2) )
        {
+         unsigned int sleeping = 5;
          write_to_serial("NONE CLAP\r");
-	 std::cout << "CLAP\nSleeping for 10 sec\n" << std::endl;
-	 sleep(10);
+	 std::cout << "CLAP\nSleeping for " << sleeping << " sec...\n";
+	 sleep(sleeping);
 	 std::cout << "Resuming\n";
 	 break;
 	 
        }
+      else{
 // -------- End clapping part ----------
 
 // -------- Begin actual movement detection part ----------
@@ -376,6 +385,7 @@ void update_hands_position(const Frame &frame)
        write_to_serial(message);
 	
        std::cout << message << std::endl;
+       }
      }
   }
 }
@@ -410,4 +420,3 @@ void set_up_configuration(Controller & controller){
   std::cout << "Configurations are saved.\n\n";
   controller.config().save();
 }
-

@@ -57,6 +57,8 @@ class Parser:
             message = ("The coefficient for the movement angle is now {} .\n").format(self.mover.get_angle_coefficient())
             message= message + "Enter the new coefficient!"
             new_coefficient = input(message)
+            if(not new_coefficient.isdigit()):
+                new_coefficient = self.mover.get_angle_coefficient()
             new_coefficient = int(new_coefficient)
             self.mover.set_angle_coefficient(new_coefficient)
         else:
@@ -164,3 +166,4 @@ class Parser:
                 print(msg)
                 self.parse_input(msg, servo_list)
                 time.sleep(0.15)
+

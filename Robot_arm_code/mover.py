@@ -39,9 +39,14 @@ class Mover:
         Args:
             servo_list (list[Servo]): The servo list that contains the servos of the robot arm.
         """
-
+        
+        self.move_slowly(servo_list[2], -30)
+        self.move_slowly(servo_list[1], 30)
+        self.move_slowly(servo_list[0],60)
+        
+        time.sleep(0.5)
         for servo in servo_list:
-            servo.set_angle(servo.initial_angle)
+            self.move_slowly(servo, servo.initial_angle)
 
 
     def set_angle_coefficient(self,coefficient) -> None:
@@ -49,6 +54,16 @@ class Mover:
     
     def get_angle_coefficient(self)-> int:
         return self.coefficient
-
+    
+    def move_slowly(self, servo, aim):
+        init_angle = servo.get_angle()
+        if (init_angle < aim):
+            while(servo.get_angle() <= aim):
+                servo.set_angle(servo.get_angle() + 10)
+                time.sleep(0.05)
+        else:
+            while(servo.get_angle() >= aim):
+                servo.set_angle(servo.get_angle() - 10)
+                time.sleep(0.05)
     
 
