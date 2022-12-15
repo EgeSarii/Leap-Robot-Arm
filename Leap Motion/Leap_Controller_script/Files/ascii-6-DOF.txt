@@ -1,0 +1,25 @@
+
+       @@@  @@@ ---------- 
+        @    @            |-> GRABBER = Left hand; 5-0 fingers; GRAB-RELEASE
+        @@@@@@  ---------- 
+          @@    ------------> ROTOR = Right hand; 1 finger; SWIPE_LEFT-SWIPE_RIGHT.
+        @@@@@@ 
+       @@@@@@@@ 
+        @  @@   ------------> HIGHER ARM = Right hand; 4 fingers; UP-DOWN.
+     @@@@@@@@@ 
+     @@ @@@ @@ 
+     @@@@@@@@@ 
+      @@@@@@ 
+       @@@@@ 
+        @ @    ----------- 
+        @ @               |-> MIDDLE ARM = Right hand; 3 fingers; UP-DOWN.
+        @ @    ----------- 
+      @@@@@@                   
+     @@@@@@@ 
+     @@@@@@@@@@ ----------
+     @@ @@@ @@@           | 
+    @@@      @@           |-> LOWER ARM = Right hand; 2 fingers; UP-DOWN.
+   @@@@@@@@  @@           |   
+  @@@@@@@@@@@@@-----------
+ @@@@@@@@@@@@@@@@@@@@@@@@  
+ @@@@@@@@@@@@@@@@@@@@@@@@ --> BASE = Right hand; 5 fingers; SWIPE_LEFT-SWIPE_RIGHT.
