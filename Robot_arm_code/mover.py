@@ -49,13 +49,20 @@ class Mover:
             self.move_slowly(servo, servo.initial_angle)
 
 
-    def set_angle_coefficient(self,coefficient) -> None:
+    def set_angle_coefficient(self,coefficient: int) -> None:
         self.coefficient = coefficient
     
     def get_angle_coefficient(self)-> int:
         return self.coefficient
     
-    def move_slowly(self, servo, aim):
+    def move_slowly(self, servo:Servo, aim:int) -> None:
+        """
+        Move the servo to a specific angle, aim but in slow movements.
+
+        Args:   
+            servo (Servo): The servo to be moved
+            aim (int): The angle to be aimed
+        """
         init_angle = servo.get_angle()
         if (init_angle < aim):
             while(servo.get_angle() <= aim):

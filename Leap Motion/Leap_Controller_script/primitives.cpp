@@ -234,11 +234,11 @@ bool detect_clap(Hand hand_1, Hand hand_2)
   Vector vec_l = left.palmPosition();
   Vector vec_r = right.palmPosition();
   std::cout << vec_l <<"     "<< vec_r<<std::endl;
-  const float TOUCH = 0.5;
+  const float TOUCH = 1.5;
   
   
   
-  return std::abs(vec_r.x)  - std::abs(vec_l.x) <= TOUCH; //&&
+  return (vec_r.x + 3000) -(vec_l.x + 3000) <= TOUCH;
          //(vec_r.y - vec_l.y) <= TOUCH && (vec_r.y - vec_l.y) >= -TOUCH &&
          //(vec_r.z - vec_l.z) <= TOUCH && (vec_r.z - vec_l.z) >= -TOUCH; 
 }

@@ -14,7 +14,7 @@ endif
 
 LDLIBS+=$(LEAP_LIBRARY)
 CPPFLAGS=-Wall -g -I../include
-OBJECTS= primitives.o variables.o SampleListener.o Leap_controller.o
+OBJECTS= primitives.o variables.o SampleListener.o Leap_controller.o interactive_menu.o
 
 all: LeapController
 
