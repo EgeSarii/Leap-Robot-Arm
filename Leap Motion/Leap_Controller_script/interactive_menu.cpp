@@ -5,15 +5,21 @@
 #include <fstream>
 #include <unistd.h>
 
+#include "Leap.h"
+#include "SampleListener.h"
+#include "datatypes.h"
+#include "primitives.h"
+
 /*
   This script consists in a terminal application to provide the user
   of LepoBot with basic notions and a small practice.
 */
 
-//using namespace Leap;
+using namespace Leap;
 
-//Constants which brings to the .txt files.
-const std::string PATH = "./Files/";
+//Shared variable used to start the demo in the OnFrame() method of
+//the SimpleListener.
+bool play_demo = false;
 
 //Function which reads a content of a file "filename" and stores it in
 //'content'. True is returned iff the file is read correctly.
@@ -55,7 +61,7 @@ void display_help_actions()
 {
   std::cout << "GESTURES    := Page with list of gestures and small practice.\n"
             << "SCHEMATICS  := See robot schematics and components.\n"
-    //            << "RUN         := Start demo section.\n"
+            << "RUN         := Start demo section.\n"
             << "HELP        := Come back to help main page.\n"
 	    << "MENU        := Come back to main menu.\n\n>";
 }
@@ -200,6 +206,7 @@ bool tutorial_state (std::string action, std::string &state,  const std::string 
 //"demo_flow" state.
 bool demo_state(std::string action, std::string & state, const std::string ROBOT_TEXT)
 {
+  
   if (tolower(action[0]) == 'h' && action.length() == 1){ display_demo_actions(); return true; }
 
   if (action == "DEMO_PAGE")
@@ -219,24 +226,37 @@ bool demo_state(std::string action, std::string & state, const std::string ROBOT
     
   if (action == "START")
   {
-     std::cout << "The demo will start in 10 seconds. Get ready!\n";
-     sleep(10);
-     std::cout << "BEGIN!\n";
-     //demo(); TO BE IMPLEMENTED!
+     std::cout << "The demo will start in 5 seconds. Get ready!\n";
+     sleep(5);
+     std::cout << "BEGIN!\n" << ROBOT_TEXT;
+
+     SampleListener demo_listener;
+     Controller controller;
+
+     std::cout << "Waiting for connection...\n";
+     
+     controller.addListener(demo_listener);
+
+     std::cin.get();
+
+     controller.removeListener(demo_listener);
+     play_demo = false;
      std::cout << "WELL DONE!\nGo back to the menu and start using LEPOBOT!\n\n>";
      return true;
   }
     
   if (action == "BACK")
   {
+     play_demo = true;
      state = "menu_flow";
      return menu_state("HELP", state, ROBOT_TEXT);
   }
 
   if (action == "MENU")
   {
-       state = "menu_flow";
-       return menu_state("MENU", state, ROBOT_TEXT);
+     play_demo = true;
+     state = "menu_flow";
+     return menu_state("MENU", state, ROBOT_TEXT);
    }
   
   action = handle_wrong_input(action);
@@ -281,10 +301,3 @@ void interactive_menu()
   }
 }
 
-/*
-int main ()
-{
-  interactive_menu();
-  return 0;
-}
-*/

@@ -9,6 +9,7 @@
 class SampleListener : public Leap::Listener {
     public:
       virtual void onConnect(const Leap::Controller&);
+      virtual void demo(const Leap::Frame&);
       virtual void onFrame(const Leap::Controller&);
 };
 #endif
@@ -54,3 +55,4 @@ operates only on new positions.
 
 This was the chosen method because it saves a little of energy and computations.
 */
+

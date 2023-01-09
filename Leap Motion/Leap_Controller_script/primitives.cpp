@@ -15,21 +15,25 @@
 
 using namespace Leap;
 
-extern std::string SERIAL_ID;
+/*
+  ######################
+  ## HELPER FUNCTIONS ##
+  ######################
+This file contains the actual implementation of the functions in
+"primitives.h".
+Those are helper functions which will be used to obtain and process
+frames received from the Leap Motion.
+*/
+
+extern std::string serial_id;
 extern int serial;
 extern unsigned int rightHandPosIndex;
 extern unsigned int left_hand_index;
 extern Movement left_hand_buffer[];
-extern Vector rightHandPositions[];
-extern Vector EMPTY[];
+extern Leap::Vector rightHandPositions[];
+extern Leap::Vector EMPTY[];
 extern std::mutex r_buffer_mutex;
 extern std::mutex serial_mutex;
-
-/*
-    ############################
-    # GENERAL HELPER FUNCTIONS #
-    ############################
-*/
 
 //This function returns true if a Leap::vector contains all 0s; it is
 //initialized but not modified.
@@ -46,7 +50,7 @@ void copy_vec (const Vector original [], Vector copy [])
 }
 
 //This function returns the string 'message' according to
-//'movement'. This message will be written on serial.
+//'movement'. This message will be written to the serial.
 std::string show_movement (Movement move)
 {
   std::string message;
@@ -79,13 +83,13 @@ std::string show_movement (Movement move)
 //This function returns true iff serial is opened successfully. 
 bool open_serial ()
 {
-  const char* msg = SERIAL_ID.c_str();
+  const char* msg = serial_id.c_str();
   serial = open( msg, O_RDWR);
     
   if (serial < 0)
   {
     std::cout << "Error " << serial << " in opening serial '"
-              << SERIAL_ID << "'" << std::endl;
+              << serial_id << "'" << std::endl;
       return false;
    }
   return true;
@@ -227,20 +231,12 @@ Servo detect_right_servo (int fingers, CustomGesture gesture)
 //This function detects a clapping movement.
 bool detect_clap(Hand hand_1, Hand hand_2)
 {
-  Hand left, right;
-  if( hand_1.isLeft()){left = hand_1; right = hand_2;}
-  else { left = hand_2 ; right = hand_1;}
-  
-  Vector vec_l = left.palmPosition();
-  Vector vec_r = right.palmPosition();
-  std::cout << vec_l <<"     "<< vec_r<<std::endl;
-  const float TOUCH = 1.5;
-  
-  
-  
-  return (vec_r.x + 3000) -(vec_l.x + 3000) <= TOUCH;
-         //(vec_r.y - vec_l.y) <= TOUCH && (vec_r.y - vec_l.y) >= -TOUCH &&
-         //(vec_r.z - vec_l.z) <= TOUCH && (vec_r.z - vec_l.z) >= -TOUCH; 
+  Vector vec_1 = hand_1.direction();
+  Vector vec_2 = hand_2.direction();
+  const int TOUCH = 0.5;
+  return std::abs(vec_1.x - vec_2.x) <= TOUCH &&
+         std::abs(vec_1.y - vec_2.y) <= TOUCH &&
+         std::abs(vec_1.z - vec_2.z) <= TOUCH; 
 }
 
 //This function starts processing data of the right hand.
@@ -324,70 +320,66 @@ bool manage_left_buf(Movement move)
 //The string written to serial is parsed to instruct the 6-DOF robot.
 void update_hands_position(const Frame &frame)
 {
-  
-  int hands_amount = frame.hands().count();
-  HandList hands = frame.hands();
-  Movement robot_command = {STILL, NONE};
-  std::string message = "";
-  
-  switch (hands_amount)
-  {
-     case 0: //This should be never met by use of inner class SimpleListener.
-       return;
-       
-     case 1:
-     {
-        robot_command = assign_hands(hands[0]);
-        message = show_movement(robot_command)+ "\r";
-
-	if ((hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
-	{
-	  write_to_serial(message);
-	  std::cout << message << std::endl;
-	}
-
-        break;
-     }
-
-     case 2:
-     {
-       
-// -------- Begin clapping part ----------
-       Hand hand_1 = hands[0];
-       Hand hand_2 = hands[1];
-       if ( detect_clap(hand_1, hand_2) )
-       {
-         unsigned int sleeping = 5;
-         write_to_serial("NONE CLAP\r");
-	 std::cout << "CLAP\nSleeping for " << sleeping << " sec...\n";
-	 sleep(sleeping);
-	 std::cout << "Resuming\n";
-	 break;
-	 
-       }
-      else{
-// -------- End clapping part ----------
-
-// -------- Begin actual movement detection part ----------
-       robot_command = assign_hands(hands[0]);
-       if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
-       {
-	 message = show_movement(robot_command);
-       }
-       
-       robot_command = assign_hands(hands[1]);
-       if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
-       {
-	 message += show_movement(robot_command);
-       }
-       
-       message += "\r";
-       write_to_serial(message);
+        int hands_amount = frame.hands().count();
+        HandList hands = frame.hands();
+        Movement robot_command = {STILL, NONE};
+        std::string message = "";
 	
-       std::cout << message << std::endl;
-       }
-     }
-  }
+        switch (hands_amount)
+        {
+	  //This should be never met by use of inner class SimpleListener.
+          case 0: return;
+       
+          case 1:
+          {
+            robot_command = assign_hands(hands[0]);
+            message = show_movement(robot_command)+ "\r";
+
+            if ((hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
+	    {
+	       write_to_serial(message);
+ 	       std::cout << message << std::endl;
+	    }
+
+            break;
+	  }
+
+          case 2:
+          {
+       
+          // -------- Begin clapping part ----------
+            Hand hand_1 = hands[0];
+            Hand hand_2 = hands[1];
+
+            if ( detect_clap(hand_1, hand_2) )
+            {
+               write_to_serial("NONE CLAP\r");
+	       std::cout << "CLAP\nSleeping for 5 sec\n" << std::endl;
+	       sleep(5);
+	       std::cout << "Resuming\n";
+	       break;
+	 
+	    }
+
+         // -------- Begin other movement detection part ----------
+           robot_command = assign_hands(hands[0]);
+           if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
+           {
+	      message = show_movement(robot_command);
+	   }
+       
+           robot_command = assign_hands(hands[1]);
+           if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
+           {
+	      message += show_movement(robot_command);
+	   }
+       
+           message += "\r";
+           write_to_serial(message);
+	
+           std::cout << message << std::endl;
+	  }
+	}
 }
 
 //This function sets up parameters for optimizing energy consumption.

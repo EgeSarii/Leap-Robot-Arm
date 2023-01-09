@@ -7,14 +7,8 @@
 
 using namespace Leap;
 
-/*
-    #############
-    # CONSTANTS #
-    #############
-*/
-
 //Location of serial device to be written.
-std::string SERIAL_ID = "/dev/ttyACM0";
+std::string serial_id = "/dev/ttyACM1";
 
 //EMPTY array of Leap::vectors to clean buffer.
 Vector EMPTY[BUFSIZE] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};
@@ -53,5 +47,3 @@ std::mutex r_buffer_mutex; //Mutex for ensure synchronization on
 //This will obtain the process id once the function "open" is called.
 int serial = 0;
 
-//This will be the last instruction for the robot arm.
-std::string home = "GO HOME\r";

@@ -56,14 +56,13 @@ CustomGesture detect_right_gesture(Leap::Hand hand, int fingers );
 CustomGesture detect_left_gesture(Leap::Hand hand, int fingers );
 
 
-//This function detects a clapping movement.
-bool detect_clap(Leap::Hand hand_1, Leap::Hand hand_2);
-
-
 //This function uses the amount of fingers and the gesture to assign
 //the correct servo of the right hand.
 Servo detect_right_servo (int fingers, CustomGesture gesture);
 
+
+//This function detects a clapping movement.
+bool detect_clap(Leap::Hand hand_1, Leap::Hand hand_2);
 
 //This function starts processing data of the right hand.
 //At the end of execution, the movement of the right hand is detected.
@@ -88,6 +87,10 @@ bool left_buf_full();
 //In this case the index of such buffer is set to 0.
 //Otherwise the commands is added to the buffer.
 bool manage_left_buf(Movement move);
+
+
+//This function starts the demo_practice of the interactive application.
+void demo(const Leap::Frame & frame);
 
 //This function checks the amount of hands captured by the Leap Motion
 //and writes to serial the respective movements.
