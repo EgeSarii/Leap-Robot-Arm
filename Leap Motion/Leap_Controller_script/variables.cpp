@@ -8,7 +8,7 @@
 using namespace Leap;
 
 //Location of serial device to be written.
-std::string serial_id = "/dev/ttyACM1";
+std::string SERIAL_ID = "/dev/ttyACM0";
 
 //EMPTY array of Leap::vectors to clean buffer.
 Vector EMPTY[BUFSIZE] = {Vector(), Vector(), Vector(), Vector(), Vector(),Vector(), Vector(), Vector(), Vector(), Vector()};

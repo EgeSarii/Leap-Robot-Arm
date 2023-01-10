@@ -6,7 +6,7 @@ import sys
 
 class Mover:
 
-    def __init__(self, coefficient=5) -> None:
+    def __init__(self, coefficient=10) -> None:
         self.coefficient = coefficient
 
     def move_servo(self,inp: str, servo: Servo)-> None:

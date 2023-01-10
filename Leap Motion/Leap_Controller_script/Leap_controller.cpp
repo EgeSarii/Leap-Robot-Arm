@@ -46,7 +46,11 @@ int main(int argc, char** argv)
 
     // Remove the sample listener when done.
     controller.removeListener(listener);
+     
+    
 
+    //Bringing robot in starting position.
+    write_to_serial("GO HOME\r");	
     return 0;
 }
 
