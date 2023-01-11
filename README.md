@@ -3,9 +3,6 @@
 
 
 #### Importan links:
-For Dobot SDK and demos :
- - https://github.com/SERLatBTH/StarterGuide-DobotMagician/blob/master/README.md#sdk
-
 
 For Leap motion Integration:
  - For Arduino : https://cylonjs.com/documentation/platforms/arduino/
