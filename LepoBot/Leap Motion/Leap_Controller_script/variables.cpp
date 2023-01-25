@@ -30,7 +30,7 @@ Vector rightHandPositions[BUFSIZE] = {Vector(), Vector(), Vector(), Vector(), Ve
 //this buffer the Leap Motion will detect several movements related to
 //the left hand. This is because the movements of the left hand are
 //detected based on a single frame.
-Movement left_hand_buffer[BUFSIZE];
+Vector left_hand_buffer[BUFSIZE];
   
 //This variable is used to keep track of the indexes of such circular buffer.
 unsigned rightHandPosIndex = 0;

@@ -29,7 +29,7 @@ extern std::string serial_id;
 extern int serial;
 extern unsigned int rightHandPosIndex;
 extern unsigned int left_hand_index;
-extern Movement left_hand_buffer[];
+extern Leap::Vector left_hand_buffer[];
 extern Leap::Vector rightHandPositions[];
 extern Leap::Vector EMPTY[];
 extern std::mutex r_buffer_mutex;
@@ -174,10 +174,10 @@ Movement detect_right_gesture(Hand hand, int fingers)
     {                                                      
       switch (fingers)
       {
-      case 1: cur_move = {SWIPE_RIGHT, BASE}, break;
-      case 2: cur_move = {UP, LOWER_ARM}, break;
-      case 3: cur_move =  {UP, MIDDLE_ARM}, break;
-      case 4: cur_move = {UP, HIGHER_ARM}, break;
+      case 1: cur_move = {SWIPE_RIGHT, BASE}; break;
+      case 2: cur_move = {UP, LOWER_ARM}; break;
+      case 3: cur_move =  {UP, MIDDLE_ARM}; break;
+      case 4: cur_move = {UP, HIGHER_ARM}; break;
       }
     }    
     else { //5 stretched fingers.
@@ -222,10 +222,10 @@ Movement detect_left_gesture(Hand hand, int fingers )
     {                                                      
       switch (fingers)
       {
-      case 1: cur_move = {SWIPE_LEFT, BASE}, break;
-      case 2: cur_move = {DOWN, LOWER_ARM}, break;
-      case 3: cur_move = {DOWN, MIDDLE_ARM}, break;
-      case 4: cur_move = {DOWN, HIGHER_ARM}, break;
+      case 1: cur_move = {SWIPE_LEFT, BASE}; break;
+      case 2: cur_move = {DOWN, LOWER_ARM}; break;
+      case 3: cur_move = {DOWN, MIDDLE_ARM}; break;
+      case 4: cur_move = {DOWN, HIGHER_ARM}; break;
       }
     }    
     else if (fingers == 0 || fingers == 5)
@@ -343,12 +343,14 @@ Movement assign_hands(const Hand hand)
 
 //This function checks that the left hand buffer "left_hand_buffer" is
 //full of commands.
+/*
 bool left_buf_full()
 {
   return left_hand_index == BUFSIZE;
 }
-
+*/
 //This function returns true iff the left hand buffer is full.
+/*
 bool manage_left_buf(Movement move)
 {
   if (left_buf_full())
@@ -362,6 +364,7 @@ bool manage_left_buf(Movement move)
     return false;
   }    
 }
+*/
 
 //This function checks the amount of hands captured by the Leap Motion
 //and writes to serial the respective movements.
@@ -383,7 +386,7 @@ void update_hands_position(const Frame &frame)
             robot_command = assign_hands(hands[0]);
             message = show_movement(robot_command)+ "\r";
 
-            if ((hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
+            if ((hands[0].isLeft() /*&&  manage_left_buf(robot_command)*/ ) || hands[0].isRight())
 	    {
 	       write_to_serial(message);
  	       std::cout << message << std::endl;
@@ -411,13 +414,13 @@ void update_hands_position(const Frame &frame)
 
          // -------- Begin any other movement detection part ----------
            robot_command = assign_hands(hands[0]);
-           if ( (hands[0].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[0].isRight())
+           if ( (hands[0].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[0].isRight()))
            {
 	      message = show_movement(robot_command);
 	   }
        
            robot_command = assign_hands(hands[1]);
-	     if ( (hands[1].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[1].isRight())
+	   if ( (hands[1].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[1].isRight()))
            {
 	      message += show_movement(robot_command);
 	   }
