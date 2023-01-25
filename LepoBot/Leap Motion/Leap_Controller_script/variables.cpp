@@ -47,3 +47,4 @@ std::mutex r_buffer_mutex; //Mutex for ensure synchronization on
 //This will obtain the process id once the function "open" is called.
 int serial = 0;
 
+std::mutex l_buffer_mutex;

@@ -30,4 +30,3 @@ struct Movement {
   Servo servo;
 };
 #endif
-

@@ -25,7 +25,7 @@ Those are helper functions which will be used to obtain and process
 frames received from the Leap Motion.
 */
 
-extern std::string serial_id;
+extern std::string SERIAL_ID;
 extern int serial;
 extern unsigned int rightHandPosIndex;
 extern unsigned int left_hand_index;
@@ -84,13 +84,13 @@ std::string show_movement (Movement move)
 //This function returns true iff serial is opened successfully. 
 bool open_serial ()
 {
-  const char* msg = serial_id.c_str();
+  const char* msg = SERIAL_ID.c_str();
   serial = open( msg, O_RDWR);
     
   if (serial < 0)
   {
     std::cout << "Error " << serial << " in opening serial '"
-              << serial_id << "'" << std::endl;
+              << SERIAL_ID << "'" << std::endl;
       return false;
    }
   return true;
@@ -383,10 +383,12 @@ void update_hands_position(const Frame &frame)
        
           case 1:
           {
-            robot_command = assign_hands(hands[0]);
+            Hand hand = hands[0];
+            robot_command = assign_hands(hand);
             message = show_movement(robot_command)+ "\r";
 
-            if ((hands[0].isLeft() &&  manage_left_buf(robot_command) ) || hands[0].isRight())
+            if ( hand.isRight() || (hand.isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
+                                || (hand.isLeft() && robot_command.servo != GRABBER ))
 	    {
 	       write_to_serial(message);
  	       std::cout << message << std::endl;
@@ -414,13 +416,17 @@ void update_hands_position(const Frame &frame)
 
          // -------- Begin any other movement detection part ----------
            robot_command = assign_hands(hands[0]);
-           if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
+           //if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
+           if ( hands[0].isRight() || (hands[0].isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
+                                || (hands[0].isLeft() && robot_command.servo != GRABBER ))
            {
 	      message = show_movement(robot_command);
 	   }
        
            robot_command = assign_hands(hands[1]);
-	   if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
+	   //if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
+           if ( hands[1].isRight() || (hands[1].isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
+                                || (hands[1].isLeft() && robot_command.servo != GRABBER ))
            {
 	      message += show_movement(robot_command);
 	   }
