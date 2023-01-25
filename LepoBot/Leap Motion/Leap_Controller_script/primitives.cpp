@@ -341,30 +341,30 @@ Movement assign_hands(const Hand hand)
   return cur_movement;
 }
 
+Movement grabber_buffer [BUFSIZE];
+int grabber_index = 0;
+
 //This function checks that the left hand buffer "left_hand_buffer" is
 //full of commands.
-/*
 bool left_buf_full()
 {
-  return left_hand_index == BUFSIZE;
+  return grabber_index == BUFSIZE;
 }
-*/
+
 //This function returns true iff the left hand buffer is full.
-/*
 bool manage_left_buf(Movement move)
 {
   if (left_buf_full())
   {
-    left_hand_index = 0;
+    grabber_index = 0;
     return true;
   }
   else
   {
-    left_hand_buffer[left_hand_index++] = move;
+    grabber_buffer[grabber_index++] = move;
     return false;
   }    
 }
-*/
 
 //This function checks the amount of hands captured by the Leap Motion
 //and writes to serial the respective movements.
@@ -386,7 +386,7 @@ void update_hands_position(const Frame &frame)
             robot_command = assign_hands(hands[0]);
             message = show_movement(robot_command)+ "\r";
 
-            if ((hands[0].isLeft() /*&&  manage_left_buf(robot_command)*/ ) || hands[0].isRight())
+            if ((hands[0].isLeft() &&  manage_left_buf(robot_command) ) || hands[0].isRight())
 	    {
 	       write_to_serial(message);
  	       std::cout << message << std::endl;
@@ -414,13 +414,13 @@ void update_hands_position(const Frame &frame)
 
          // -------- Begin any other movement detection part ----------
            robot_command = assign_hands(hands[0]);
-           if ( (hands[0].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[0].isRight()))
+           if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
            {
 	      message = show_movement(robot_command);
 	   }
        
            robot_command = assign_hands(hands[1]);
-	   if ( (hands[1].isLeft() /*&& manage_left_buf(robot_command))*/ || hands[1].isRight()))
+	   if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
            {
 	      message += show_movement(robot_command);
 	   }
