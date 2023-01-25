@@ -48,12 +48,12 @@ bool check_x_direction(bool dir);
 
 //This function is used to detect and classify custom gestures of the
 //right hand.
-CustomGesture detect_right_gesture(Leap::Hand hand, int fingers );
+Movement detect_right_gesture(Leap::Hand hand, int fingers );
 
 
 //This function detects movement of the left hand: it checks if
 //movements GRAB and RELEASE are set.
-CustomGesture detect_left_gesture(Leap::Hand hand, int fingers );
+Movement detect_left_gesture(Leap::Hand hand, int fingers );
 
 
 //This function uses the amount of fingers and the gesture to assign
