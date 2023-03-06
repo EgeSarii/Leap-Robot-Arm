@@ -93,4 +93,13 @@ def go_get_it()-> None:
     time.sleep(1)
     servo6.set_angle(-90)
     
+
+def move_up(servo_list):
+    
+    counter1 = 1
+    counter2 = 1
+    
+    
+
+
     

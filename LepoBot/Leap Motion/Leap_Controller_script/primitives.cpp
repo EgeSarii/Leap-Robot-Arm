@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string.h>
 #include <mutex>
+#include <unistd.h>
 #include <string.h>
 #include <fcntl.h>   // Contains file controls like O_RDWR.
 #include <errno.h>   // Error integer and strerror() function.
@@ -105,6 +106,7 @@ void write_to_serial (std::string message)
   serial_mutex.lock();
   write(serial, msg, strlen(msg));
   serial_mutex.unlock();
+  std::sleep(3);
 
   return;
 }
