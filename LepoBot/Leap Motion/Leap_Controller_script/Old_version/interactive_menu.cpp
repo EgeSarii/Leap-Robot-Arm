@@ -300,4 +300,3 @@ void interactive_menu()
     while(execute_action(action, state, gestures, lyrics, robot)) { getline(std::cin,action); }   
   }
 }
-

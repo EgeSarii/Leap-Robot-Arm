@@ -62,20 +62,8 @@ def ik_3(x, z):
   #print('theta_3: ', rad2deg(theta3))
 
   
-  #print(angles)
+  print(angles)
   return(angles)
 
 
-def deneme():
-    
-  x = 0 
-  while(x <=25):
-    angles = ik_3(25,x)
-    print('servo2.set_angle(0+{})'.format(angles[0]))
-    print('servo3.set_angle(160 + {})'.format(angles[1]))
-    print('servo4.set_angle(135-{})'.format(angles[2]))
-    print('time.sleep(2)')
-
-    x = x+2
-
-deneme()
+ik_3(21, 2)

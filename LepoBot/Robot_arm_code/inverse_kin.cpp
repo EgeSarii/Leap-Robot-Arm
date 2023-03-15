@@ -19,9 +19,27 @@ void ik_3(double x, double y,  double z, double& theta0, double& theta1, double&
     
 
     // Desired Position of End effector
-    double px = x;
-    double py = y;
-    double pz = z;
+    double px;
+    double py=y;
+    double pz;
+
+    if( (x>= 20)  && x<=(a1+a2+a3)){
+        px = x;
+    }   
+    else if(x <20){
+        px =20;
+    }
+    else
+    {
+        px =(a1+a2+a3);
+    }   
+    
+    if(z <= (a1+a2)){
+        pz = z;
+    }
+    else{
+        pz =(a1+a2);
+    }
 
     double phi = 0;
     phi = deg2rad(phi);

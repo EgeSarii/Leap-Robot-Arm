@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <iostream>
 #include "Leap.h"
-#include "inverse_kinematics.h"
 
 //Defining Listener Sub-class: 
 class SampleListener : public Leap::Listener {
     public:
       virtual void onConnect(const Leap::Controller&);
+      virtual void demo(const Leap::Frame&);
       virtual void onFrame(const Leap::Controller&);
 };
 #endif

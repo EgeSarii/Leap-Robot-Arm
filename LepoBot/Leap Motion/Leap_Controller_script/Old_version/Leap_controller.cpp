@@ -12,6 +12,7 @@
 #include "datatypes.h"
 #include "SampleListener.h"
 #include "primitives.h"
+#include "interactive_menu.h"
 
 using namespace Leap;
 
@@ -24,7 +25,9 @@ to the Leap Motion Controller.
 */
 
 int main(int argc, char** argv)
-{  
+{
+    interactive_menu();
+  
     SampleListener listener;
     Controller controller; //This object connects automatically to the
                            //Leap motion daemon. Tracking data can be 

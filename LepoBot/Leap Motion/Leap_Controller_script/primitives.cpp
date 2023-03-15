@@ -13,6 +13,7 @@
 #include "SampleListener.h"
 #include "primitives.h"
 #include "datatypes.h"
+#include "inverse_kinematics.h"
 
 using namespace Leap;
 
@@ -26,17 +27,22 @@ Those are helper functions which will be used to obtain and process
 frames received from the Leap Motion.
 */
 
-extern std::string SERIAL_ID;
-extern int serial;
-extern unsigned int rightHandPosIndex;
-extern unsigned int left_hand_index;
-extern Leap::Vector left_hand_buffer[];
-extern Leap::Vector rightHandPositions[];
-extern Leap::Vector EMPTY[];
-extern std::mutex r_buffer_mutex;
-extern std::mutex l_buffer_mutex;
-extern std::mutex serial_mutex;
+extern std::string  SERIAL_ID;
+extern int          serial;
+extern Leap::Vector position_buffer[BUFSIZE];
+extern Leap::Vector EMPTY[BUFSIZE];
+extern unsigned int buffer_index;
+extern std::mutex   buffer_mutex;
+extern std::mutex   serial_mutex;
 
+
+
+double theta0 = 0;
+double theta1 = 0;
+double theta2 = 0;
+double theta3 = 0;
+         
+         
 //This function returns true if a Leap::vector contains all 0s; it is
 //initialized but not modified.
 bool is_empty_vec(Vector v)
@@ -51,37 +57,6 @@ void copy_vec (const Vector original [], Vector copy [])
     copy[i] = original[i];
 }
 
-//This function returns the string 'message' according to
-//'movement'. This message will be written to the serial.
-std::string show_movement (Movement move)
-{
-  std::string message;
-  
-  switch(move.servo)
-  {
-    case 1:  {message = "BASE ";       break;}
-    case 2:  {message = "LOWER_ARM ";  break;}
-    case 3:  {message = "MIDDLE_ARM "; break;}
-    case 4:  {message = "HIGHER_ARM "; break;}
-    case 5:  {message = "ROTOR ";      break;}
-    case 6:  {message = "GRABBER ";    break;}
-    default:  message = "";
-  }
-    
-  switch (move.gesture)
-  {
-    case 1:  {message += "UP ";          break;}
-    case 2:  {message += "DOWN ";        break;}
-    case 3:  {message += "SWIPE_LEFT ";  break;}
-    case 4:  {message += "SWIPE_RIGHT "; break;}
-    case 5:  {message += "GRAB ";        break;}
-    case 6:  {message += "RELEASE ";     break;}
-    default:  message += "";
-  }
-
-  return message;
-}
-
 //This function returns true iff serial is opened successfully. 
 bool open_serial ()
 {
@@ -92,7 +67,7 @@ bool open_serial ()
   {
     std::cout << "Error " << serial << " in opening serial '"
               << SERIAL_ID << "'" << std::endl;
-      return false;
+    return false;
    }
   return true;
 }
@@ -106,339 +81,73 @@ void write_to_serial (std::string message)
   serial_mutex.lock();
   write(serial, msg, strlen(msg));
   serial_mutex.unlock();
-  std::sleep(3);
+  sleep(1);
 
   return;
 }
 
-//This function checks if the current vector has positions of the
-//y-axis which in/de-creases. In this case the movement UP/DOWN is detected.
-bool check_y_direction(bool dir)
-{  
-  for (unsigned i = 0; i < BUFSIZE-1; i++){
-    
-     float y1 = rightHandPositions[i].y;
-     float y2 = rightHandPositions[i+1].y;
-     const float OFFSET = 2.00;
-
-     if ( dir ){ //True stays for UP
-       if (y1  > y2 + OFFSET ||  std::abs(y1 - y2)  < OFFSET )
-         return false;
-    
-     }else{ //False stays for DOWN
-        if (y1 + OFFSET  < y2 ||  std::abs(y1 - y2)  < OFFSET )
-           return false;
-     }
-  }
-  
-  return true;
-}
-
-
-//This function checks if the current vector has positions of the
-//x-axis which in/de-creases. In this case the movement
-//SWIPE_RIGHT/LEFT is detected.
-bool check_x_direction(bool dir)
-{ 
-  for (unsigned i = 0; i < BUFSIZE-1; i++){
-    
-     float x1 = rightHandPositions[i].x;   
-     float x2 = rightHandPositions[i+1].x; 
-     const float OFFSET = 0.5;
-
-     if ( dir ){ //True stays for SWIPE_RIGHT
-       if (x1  > x2 + OFFSET || std::abs(x1 - x2)  < OFFSET )
-         return false;
-    
-     }else{ //False stays for SWIPE_LEFT
-       if (x1 + OFFSET  < x2 || std::abs(x1 - x2)  < OFFSET )
-           return false;
-     }
-  }
-  
-  return true;
-}
-
-//This function is used to detect and classify custom gestures of the
-//right hand.
-Movement detect_right_gesture(Hand hand, int fingers)
-{
-  //RIGHT HAND IS USED FOR MOVEMENTS OF ARMS OF ROBOT.
-  Movement cur_move = {STILL, NONE};
-
-  if (hand.isRight() && !is_empty_vec(rightHandPositions[BUFSIZE-1]))
-  {
-    if (fingers == 0){ //No movements are sent; possible to reposition hand.
-      return cur_move;
-    }
-
-    else if (fingers >= 1 && fingers <= 4)
-    {                                                      
-      switch (fingers)
-      {
-      case 1: cur_move = {SWIPE_RIGHT, BASE}; break;
-      case 2: cur_move = {UP, LOWER_ARM}; break;
-      case 3: cur_move =  {UP, MIDDLE_ARM}; break;
-      case 4: cur_move = {UP, HIGHER_ARM}; break;
-      }
-    }    
-    else { //5 stretched fingers.
-      if (check_x_direction(true)){
-	cur_move = {SWIPE_RIGHT, ROTOR};
-      }
-      else if (check_x_direction (false)){
-	cur_move =  {SWIPE_LEFT, ROTOR};
-      }
-    }
-
-   //Needed to empty global vector and store new frames.
-   //This prevent circular buffer to consider previous data.
-   rightHandPosIndex = 0;
-   copy_vec (EMPTY, rightHandPositions);
-  }
-
-  return cur_move;
-}
-
-//This function detects movement of the left hand: it checks if
-//movements GRAB and RELEASE are set.
-Movement detect_left_gesture(Hand hand, int fingers )
-{ //LEFT HAND IS USED FOR GRIPPING OR RELEASING THE GRABBER ONLY.
-  /*
-  if (hand.isLeft())
-  {
-    switch (fingers)
-    {
-      case 5:  return RELEASE;
-      case 0:  return GRAB;
-    }
-  }
-  return STILL;
-  */
-   //RIGHT HAND IS USED FOR MOVEMENTS OF ARMS OF ROBOT.
-  Movement cur_move = {STILL, NONE};
-
-  if (hand.isLeft() && !is_empty_vec(left_hand_buffer[BUFSIZE-1]))
-  {
-    if (fingers >= 1 && fingers <= 4)
-    {                                                      
-      switch (fingers)
-      {
-      case 1: cur_move = {SWIPE_LEFT, BASE}; break;
-      case 2: cur_move = {DOWN, LOWER_ARM}; break;
-      case 3: cur_move = {DOWN, MIDDLE_ARM}; break;
-      case 4: cur_move = {DOWN, HIGHER_ARM}; break;
-      }
-    }    
-    else if (fingers == 0 || fingers == 5)
-    {
-      switch (fingers)
-      {
-       case 5:  return {RELEASE, GRABBER};
-       case 0:  return {GRAB, GRABBER};
-      }
-    }
-   
-   //Needed to empty global vector and store new frames.
-   //This prevent circular buffer to consider previous data.
-   left_hand_index = 0;
-   copy_vec (EMPTY, left_hand_buffer);
-   
-  }
-
-  return cur_move;
-}
-
-//This function uses the amount of fingers and the gesture to assign
-//the correct servo of the right hand.
-Servo detect_right_servo (int fingers, CustomGesture gesture)
-{
-  if ( gesture == SWIPE_LEFT || gesture == SWIPE_RIGHT )
-  {
-    if (fingers == 5){return BASE;}
-    else if (fingers == 1) {return ROTOR;}
-  }
-  switch (fingers)
-  {
-    case 2 : return LOWER_ARM;
-    case 3 : return MIDDLE_ARM;
-    case 4 : return HIGHER_ARM;
-    default: return NONE;
-  }
-}
-
-//This function detects a clapping movement.
-bool detect_clap(Hand hand_1, Hand hand_2)
-{
-  Vector vec_1 = hand_1.direction();
-  Vector vec_2 = hand_2.direction();
-  const int TOUCH = 0.5;
-  return std::abs(vec_1.x - vec_2.x) <= TOUCH &&
-         std::abs(vec_1.y - vec_2.y) <= TOUCH &&
-         std::abs(vec_1.z - vec_2.z) <= TOUCH; 
-}
-
-//This function starts processing data of the right hand.
-//At the end of execution, the movement of the right hand is detected.
-Movement handle_right (Hand hand)
-{
-     Hand right = hand;
-     FingerList r_fingers = right.fingers();
-     int stretched_fingers = r_fingers.extended().count();
-     Movement current_mov = {STILL, NONE};
-
-     //Detect movement
-     r_buffer_mutex.lock();
-
-     if ( rightHandPosIndex < BUFSIZE ){rightHandPositions[rightHandPosIndex++] = right.palmPosition();}
-     
-     else if (rightHandPosIndex == BUFSIZE)
-     {
-       current_mov = detect_right_gesture(right, stretched_fingers);
-       //current_mov.servo = detect_right_servo (stretched_fingers, current_mov.gesture);
-     }
-     
-     r_buffer_mutex.unlock();
-
-     return current_mov;
-}
-
-//This function starts processing data of the left hand.
-//At the end of execution, the movement of the left hand is detected.
-Movement handle_left( Hand hand)
-{
-  Hand left = hand;
-  FingerList l_fingers = left.fingers();
-  int stretched_fingers = l_fingers.extended().count();
-  Movement current_mov = {STILL, NONE};
-
-  //Detect movement
-  l_buffer_mutex.lock();
-
-  if ( left_hand_index < BUFSIZE ){left_hand_buffer[left_hand_index++] = left.palmPosition();}
-     
-  else if (left_hand_index == BUFSIZE)
-  {
-    current_mov = detect_left_gesture(left, stretched_fingers);
-    //current_mov.servo = detect_right_servo (stretched_fingers, current_mov.gesture);
-  }
-     
-  l_buffer_mutex.unlock();
-
-  return current_mov;
-}
-
-//This function assigns the correct hand to hands 'left' and 'right'
-//and the respective movements.
-Movement assign_hands(const Hand hand)
-{
-  Movement cur_movement = {STILL, NONE};
-  
-  if (hand.isLeft())
-    cur_movement = handle_left(hand);
-    
-  if (hand.isRight())
-    cur_movement = handle_right(hand);
-
-  return cur_movement;
-}
-
-Movement grabber_buffer [BUFSIZE];
-int grabber_index = 0;
-
-//This function checks that the left hand buffer "left_hand_buffer" is
-//full of commands.
-bool left_buf_full()
-{
-  return grabber_index == BUFSIZE;
-}
-
-//This function returns true iff the left hand buffer is full.
-bool manage_left_buf(Movement move)
-{
-  if (left_buf_full())
-  {
-    grabber_index = 0;
-    return true;
-  }
-  else
-  {
-    grabber_buffer[grabber_index++] = move;
-    return false;
-  }    
-}
-
-//This function checks the amount of hands captured by the Leap Motion
-//and writes to serial the respective movements.
-//The string written to serial is parsed to instruct the 6-DOF robot.
 void update_hands_position(const Frame &frame)
 {
-        int hands_amount = frame.hands().count();
-        HandList hands = frame.hands();
-        Movement robot_command = {STILL, NONE};
-        std::string message = "";
+   int hands_amount = frame.hands().count();
+   HandList hands = frame.hands();
+   std::string message = "";
 	
-        switch (hands_amount)
-        {
-	  //This should never be met by the use of the inner class SimpleListener.
-          case 0: return;
-       
-          case 1:
-          {
-            Hand hand = hands[0];
-            robot_command = assign_hands(hand);
-            message = show_movement(robot_command)+ "\r";
+   switch (hands_amount)
+   {
+     case 0: return;
+     case 2: return;
+      
+     case 1:
+     {
+       Hand hand = hands[0];
 
-            if ( hand.isRight() || (hand.isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
-                                || (hand.isLeft() && robot_command.servo != GRABBER ))
-	    {
-	       write_to_serial(message);
- 	       std::cout << message << std::endl;
-	    }
+       buffer_mutex.lock();
 
-            break;
-	  }
+       if ( buffer_index < BUFSIZE ) { position_buffer[buffer_index++] = hand.palmPosition(); }
+     
+       else if (buffer_index == BUFSIZE)
+       {
+         Vector new_position = position_buffer[BUFSIZE-1];
+	 //std::cout << new_position << std::endl;
 
-          case 2:
-          {
-       
-          // -------- Begin clapping part ----------
-            Hand hand_1 = hands[0];
-            Hand hand_2 = hands[1];
-
-            if ( detect_clap(hand_1, hand_2) )
-            {
-               write_to_serial("NONE CLAP\r");
-	       std::cout << "CLAP\nSleeping for 5 sec\n" << std::endl;
-	       sleep(5);
-	       std::cout << "Resuming\n";
-	       break;
 	 
-	    }
+	 double px = (-new_position.z +420)/10;
+	 double py = (new_position.x+250)/10;
+	 double pz = (new_position.y -50)/10;
+	 
+	 
+	 std::cout <<"X: "<< px <<" Y: "<< py << " Z:" << pz<< std::endl;
+	 ik_3(px, py, pz, theta0, theta1, theta2, theta3);
 
-         // -------- Begin any other movement detection part ----------
-           robot_command = assign_hands(hands[0]);
-           //if ( (hands[0].isLeft() && manage_left_buf(robot_command)) || hands[0].isRight())
-           if ( hands[0].isRight() || (hands[0].isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
-                                || (hands[0].isLeft() && robot_command.servo != GRABBER ))
-           {
-	      message = show_movement(robot_command);
-	   }
-       
-           robot_command = assign_hands(hands[1]);
-	   //if ( (hands[1].isLeft() && manage_left_buf(robot_command)) || hands[1].isRight())
-           if ( hands[1].isRight() || (hands[1].isLeft() && robot_command.servo == GRABBER && manage_left_buf(robot_command))
-                                || (hands[1].isLeft() && robot_command.servo != GRABBER ))
-           {
-	      message += show_movement(robot_command);
-	   }
-       
-           message += "\r";
-           write_to_serial(message);
-	
-           std::cout << message << std::endl;
-	  }
-	}
+	 //Detect rotation.
+	 double roll = hand.palmNormal().roll();
+	 std::string rotation = "";
+	  
+         if (roll > 0.5){rotation = "pos";}
+	 else if (roll < -0.5) {rotation = "neg";}
+	 else {rotation = "nat";}
+
+	 //Detect open/closure of grabber
+	 std::string grabber = "still";
+	 int stretched_fingers = hand.fingers().extended().count();
+	 if (stretched_fingers == 5) {grabber = "open";}
+	 else {grabber = "close";}
+
+	 message = std::to_string(theta0) + " " + std::to_string(theta1) + " " +  std::to_string(theta2) + " " + std::to_string(theta3) + " " + rotation + " " + grabber + "\r";
+	 
+	 std::cout << message << "\n"<< std::endl;
+	 if (theta2 != 0.000000) {write_to_serial(message);}
+	  
+	 copy_vec (EMPTY, position_buffer);
+	 buffer_index = 0;
+       }
+       else {std::cout << "BUFFER SIZE OVERFLOW!\n";}
+     
+       buffer_mutex.unlock();
+
+       return;
+     }
+   }
 }
 
 //This function sets up parameters for optimizing energy consumption.

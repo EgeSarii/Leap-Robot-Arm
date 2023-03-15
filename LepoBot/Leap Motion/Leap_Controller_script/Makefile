@@ -14,7 +14,7 @@ endif
 
 LDLIBS+=$(LEAP_LIBRARY)
 CPPFLAGS=-Wall -g -I../include
-OBJECTS= primitives.o variables.o SampleListener.o Leap_controller.o interactive_menu.o
+OBJECTS= primitives.o variables.o SampleListener.o Leap_controller.o inverse_kinematics.o
 
 all: LeapController
 
@@ -24,4 +24,3 @@ LeapController: $(OBJECTS)
 ifeq ($(OS), Darwin)
 	install_name_tool -change @loader_path/libLeap.dylib ../lib/libLeap.dylib Sample
 endif
-
