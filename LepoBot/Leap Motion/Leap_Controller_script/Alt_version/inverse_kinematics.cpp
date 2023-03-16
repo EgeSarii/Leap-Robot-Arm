@@ -27,25 +27,25 @@ void ik_3(double x, double y,  double z, double& theta0, double& theta1, double&
     double py=y;
     double pz;
 
-    if( (x>= 19)  && x<=(a1+a2+a3)){
+    if( (x>= 21)  && x<=(a1+a2+a3)){
         px = x;
     }   
-    else if(x <19){
-        px =19;
+    else if(x <21){
+        px =21;
     }
     else
     { 	
         px =(a1+a2+a3);
     }   
     
-    if(z <= sqrt(729 -( (x-19)*(x-19) ))){
+    if(z <= sqrt(729 -( (x-21)*(x-21) ))){
         pz = z;
     }
     else{
-        pz = sqrt(729 -( (x-19)*(x-19) ));
+        pz = sqrt(729 -( (x-21)*(x-21) ));
     }
  	
-  double phi = 10;
+  double phi = 0;
   phi = deg2rad(phi);
 
   // Equations for Inverse kinematics

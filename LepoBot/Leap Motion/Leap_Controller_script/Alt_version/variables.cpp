@@ -11,7 +11,7 @@ using namespace Leap;
 std::string SERIAL_ID = "/dev/ttyACM0";
 
 //EMPTY array of Leap::vectors to clean buffer.
-Vector EMPTY[BUFSIZE] = { Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector()
+Vector EMPTY[BUFSIZE] = { Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(),
                           //Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector()
                         };
 
@@ -21,7 +21,7 @@ Vector EMPTY[BUFSIZE] = { Vector(), Vector(), Vector(), Vector(), Vector(), Vect
     ####################
 */
 
-Vector position_buffer[BUFSIZE] = { Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector()//, Vector(), Vector(), Vector(),
+Vector position_buffer[BUFSIZE] = { Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(),
                                     //Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector(), Vector()
                                   };
 

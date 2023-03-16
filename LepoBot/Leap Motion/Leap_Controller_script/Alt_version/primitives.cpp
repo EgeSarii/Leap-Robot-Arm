@@ -35,8 +35,6 @@ extern unsigned int buffer_index;
 extern std::mutex   buffer_mutex;
 extern std::mutex   serial_mutex;
 
-std::mutex coordinates_mutex;
-double updateX,updateY,updateZ;
 
 
 double theta0 = 0;
@@ -110,29 +108,13 @@ void update_hands_position(const Frame &frame)
        else if (buffer_index == BUFSIZE)
        {
          Vector new_position = position_buffer[BUFSIZE-1];
-	 std::cout << new_position << std::endl;
+	 //std::cout << new_position << std::endl;
 
-         coordinates_mutex.lock();
-	 updateX = new_position.x;
-	 if (updateX > 50) {updateX += 1;}
-	 else if (updateX < -10)  { updateX -= 1;}
 	 
-	 updateY = new_position.y;
-	 if (updateY > 180) {updateY += 1;}
-	 else if (updateY < 120)  { updateY -= 1;}
+	 double px = (-new_position.z +420)/10;
+	 double py = (new_position.x+250)/10;
+	 double pz = (new_position.y -50)/10;
 	 
-	 updateZ = new_position.z;
-	 if (updateZ > 50) {updateZ -= 1;}
-	 else if (updateZ < -20)  { updateZ += 1;}
-	 
-	 std::cout <<"*** " << updateX <<" "<< updateY << " " << updateZ << std::endl;
-	 
-	 
-	 double px = (- updateZ + 420) / 10;
-	 double py = (updateX   + 250) / 10;
-	 double pz = (updateY   -  50) / 10;
-	 
-	 coordinates_mutex.unlock();
 	 
 	 std::cout <<"X: "<< px <<" Y: "<< py << " Z:" << pz<< std::endl;
 	 ik_3(px, py, pz, theta0, theta1, theta2, theta3);
