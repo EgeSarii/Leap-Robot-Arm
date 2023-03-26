@@ -6,7 +6,7 @@ import sys
 
 class Mover:
 
-    def __init__(self, coefficient=10) -> None:
+    def __init__(self, coefficient=15) -> None:
         self.coefficient = coefficient
 
     def move_servo(self,inp: str, servo: Servo)-> None:
@@ -40,9 +40,9 @@ class Mover:
             servo_list (list[Servo]): The servo list that contains the servos of the robot arm.
         """
         
-        self.move_slowly(servo_list[2], -30)
-        self.move_slowly(servo_list[1], 30)
-        self.move_slowly(servo_list[0],60)
+        self.move_slowly(servo_list[2], -10)
+        self.move_slowly(servo_list[1], 60)
+        self.move_slowly(servo_list[0],60)  
         
         time.sleep(0.5)
         for servo in servo_list:
@@ -64,13 +64,20 @@ class Mover:
             aim (int): The angle to be aimed
         """
         init_angle = servo.get_angle()
-        if (init_angle < aim):
-            while(servo.get_angle() <= aim):
-                servo.set_angle(servo.get_angle() + 10)
-                time.sleep(0.05)
-        else:
-            while(servo.get_angle() >= aim):
-                servo.set_angle(servo.get_angle() - 10)
-                time.sleep(0.05)
-    
+        
+        difference = aim - init_angle
+        
+        if(difference >= 0): # it will go in positive way
+            
+            if (init_angle + 12.5 <= aim):
+                servo.set_angle(servo.get_angle() + 12.5)
+            else:
+                servo.set_angle(aim)
+        else:               # it will go in positive way
+            if (init_angle - 12.5 >= aim):
+                servo.set_angle(servo.get_angle() - 12.5)
+            else:
+                servo.set_angle(aim)     
+        
+
 
