@@ -89,12 +89,6 @@ void ik_3(double x, double y,  double z, double& theta0, double& theta1, double&
     }
 
     theta0 = (py/50 * 180);
-    //std::cout << "servo1.set_angle(" << theta0<< ")" << endl;
-    //std::cout << "servo2.set_angle(0+" << theta1 << ")" << endl;
-    //std::cout << "servo3.set_angle(160+" << theta2 << ")" << endl;
-    //std::cout << "servo4.set_angle(135-" << theta3 << ")" << endl;
   }
-  
-  
 }
 
