@@ -28,41 +28,41 @@ frames received from the Leap Motion.
 
 const std::string SERIAL_ID = "/dev/ttyACM0";
 
-extern int          serial;
+extern int serial;
 extern Leap::Vector position_buffer[BUFSIZE];
 extern Leap::Vector EMPTY[BUFSIZE];
 extern unsigned int buffer_index;
-extern std::mutex   buffer_mutex;
-extern std::mutex   serial_mutex;
-extern std::mutex   coordinates_mutex;
+extern std::mutex buffer_mutex;
+extern std::mutex serial_mutex;
+extern std::mutex coordinates_mutex;
 
 double updateX, updateY, updateZ;
-double theta0 = 0;
 double theta1 = 0;
 double theta2 = 0;
 double theta3 = 0;
+double theta4 = 0;
 
-//This function returns true iff serial is opened successfully. 
-bool open_serial ()
+// This function returns true iff serial is opened successfully.
+bool open_serial()
 {
-  const char* msg = SERIAL_ID.c_str();
-  serial = open( msg, O_RDWR);
-    
+  const char *msg = SERIAL_ID.c_str();
+  serial = open(msg, O_RDWR);
+
   if (serial < 0)
   {
     std::cout << "Error " << serial << " in opening serial '"
               << SERIAL_ID << "'" << std::endl;
     return false;
-   }
+  }
   return true;
 }
 
-//This function converts string 'message' to char* and writes its
-//content to serial.
-void write_to_serial (std::string message)
+// This function converts string 'message' to char* and writes its
+// content to serial.
+void write_to_serial(std::string message)
 {
-  char* msg = (char*) message.c_str();
-  
+  char *msg = (char *)message.c_str();
+
   serial_mutex.lock();
   write(serial, msg, strlen(msg));
   serial_mutex.unlock();
@@ -71,121 +71,138 @@ void write_to_serial (std::string message)
   return;
 }
 
-//This function manipulates the given Frame 'frame' and the buffers to
-//determine the new angles for the robot-arm.
+// This function manipulates the given Frame 'frame' and the buffers to
+// determine the new angles for the robot-arm.
 void update_hands_position(const Frame &frame)
 {
-   int hands_amount = frame.hands().count();
-   HandList hands = frame.hands();
-   std::string message = "";
-	
-   switch (hands_amount)
-   {
-     case 0: return;
-     case 2: return;
-      
-     case 1: //Only one hand is used to operate robot. 
-     {
-       Hand hand = hands[0];
+  int hands_amount = frame.hands().count();
+  HandList hands = frame.hands();
+  std::string message = "";
 
-       buffer_mutex.lock();
+  switch (hands_amount)
+  {
+  case 0:
+    return;
+  case 2:
+    return;
 
-       //Circular buffer is filled.
-       if ( buffer_index < BUFSIZE ) { position_buffer[buffer_index++] = hand.palmPosition(); }
+  case 1: // Only one hand is used to operate robot.
+  {
+    Hand hand = hands[0];
 
-       //When full, last element of buffer is used for computation.
-       else if (buffer_index == BUFSIZE)
-       {
-         Vector new_position = position_buffer[BUFSIZE-1];
-	 std::cout << new_position << std::endl;
+    buffer_mutex.lock();
 
-	 //Creating virtual plane to increase movements little by little.
-         coordinates_mutex.lock();
-	 updateX = new_position.x;
-	 if (updateX > 50) {updateX += 1;}
-	 else if (updateX < -10)  { updateX -= 1;}
-	 
-	 updateY = new_position.y;
-	 if (updateY > 180) {updateY += 1;}
-	 else if (updateY < 120)  { updateY -= 1;}
-	 
-	 updateZ = new_position.z;
-	 if (updateZ > 50) {updateZ -= 1;}
-	 else if (updateZ < -20)  { updateZ += 1;}
-	 	 
-	 double px = (- updateZ + 420) / 10;
-	 double py = (updateX   + 250) / 10;
-	 double pz = (updateY   -  50) / 10;
-	 
-	 coordinates_mutex.unlock();
-	 
-	 ik_3(px, py, pz, theta0, theta1, theta2, theta3);
+    // Circular buffer is filled.
+    if (buffer_index < BUFSIZE)
+    {
+      position_buffer[buffer_index++] = hand.palmPosition();
+    }
 
-	 //Detect rotation.
-	 double roll = hand.palmNormal().roll();
-	 std::string rotation = "";
-	  
-         if (roll > 0.5){rotation = "pos";}
-	 else if (roll < -0.5) {rotation = "neg";}
-	 else {rotation = "nat";}
+    // When full, last element of buffer is used for computation.
+    else if (buffer_index == BUFSIZE)
+    {
+      Vector new_position = position_buffer[BUFSIZE - 1];
+      std::cout << new_position << std::endl;
 
-	 //Detect open/closure of grabber
-	 std::string grabber = "still";
-	 int stretched_fingers = hand.fingers().extended().count();
-	 if (stretched_fingers == 5) {grabber = "open";}
-	 else {grabber = "close";}
+      // Creating virtual plane to increase movements little by little.
+      coordinates_mutex.lock();
 
-	 //Creating message to be communicated to robot over serial.
-	 message = std::to_string(theta0) + " " +
-	           std::to_string(theta1) + " " +
-	           std::to_string(theta2) + " " +
-	           std::to_string(theta3) + " " +
-	           rotation + " " + grabber + "\r";
-	 
-	 std::cout << message << "\n"<< std::endl;
-	 if (theta2 != 0.000000) {write_to_serial(message);}
+      double px = (-new_position.z + 420) / 10;
+      double py = (new_position.x + 250) / 10;
+      double pz = (new_position.y - 50) / 10;
 
-	 //Resetting index of buffer to 0.
-	 buffer_index = 0;
-       }
-       
-       else {std::cout << "BUFFER SIZE OVERFLOW!\n";}
-     
-       buffer_mutex.unlock(); //This allows ordered execution of
-                              //commands at robot side.
+      coordinates_mutex.unlock();
 
-       return;
-     }
-   }
+      ik(px, py, pz, theta1, theta2, theta3, theta);
+
+      // Detect rotation.
+      double roll = hand.palmNormal().roll();
+      std::string rotation = "";
+
+      if (roll > 0.5)
+      {
+        rotation = "pos";
+      }
+      else if (roll < -0.5)
+      {
+        rotation = "neg";
+      }
+      else
+      {
+        rotation = "nat";
+      }
+
+      // Detect open/closure of grabber
+      std::string grabber = "still";
+      int stretched_fingers = hand.fingers().extended().count();
+      if (stretched_fingers == 5)
+      {
+        grabber = "open";
+      }
+      else
+      {
+        grabber = "close";
+      }
+
+      // Creating message to be communicated to robot over serial.
+      message = std::to_string(theta1) + " " +
+                std::to_string(theta2) + " " +
+                std::to_string(theta3) + " " +
+                std::to_string(theta4) + " " +
+                rotation + " " + grabber + "\r";
+
+      std::cout << message << "\n"
+                << std::endl;
+      if (theta3 != 0.000000)
+      {
+        write_to_serial(message);
+      }
+
+      // Resetting index of buffer to 0.
+      buffer_index = 0;
+    }
+
+    else
+    {
+      std::cout << "BUFFER SIZE OVERFLOW!\n";
+    }
+
+    buffer_mutex.unlock(); // This allows ordered execution of
+                           // commands at robot side.
+
+    return;
+  }
+  }
 }
 
-//This function sets up parameters for optimizing energy consumption.
-void set_up_configuration(Controller & controller){
-  //Setting images off.
+// This function sets up parameters for optimizing energy consumption.
+void set_up_configuration(Controller &controller)
+{
+  // Setting images off.
   std::cout << "Disabling images because not needed and required to enter in power-saver mode... ";
   controller.config().setInt32("tracking_images_mode", 0);
   std::cout << "IMAGES DISABLED.\n";
-/*
-  SETTING POWER-MODE CONFIGURATIONS PARAMETER:
+  /*
+    SETTING POWER-MODE CONFIGURATIONS PARAMETER:
 
- 1. acPowerSaver := Limits the frame rate to save power, even when the
-                    computer is plugged into AC power.
+   1. acPowerSaver := Limits the frame rate to save power, even when the
+                      computer is plugged into AC power.
 
- 2. low_resource_mode_enabled : Limits the frame rate to reduce USB
-                                bandwidth.
-*/
+   2. low_resource_mode_enabled : Limits the frame rate to reduce USB
+                                  bandwidth.
+  */
 
-  //Parameter 1:
+  // Parameter 1:
   std::cout << "Enabling power saver... ";
   controller.config().setBool("power_saving_adapter", true);
   std::cout << "Power saver ENABLED!\n";
 
-  //Parameter 2:
+  // Parameter 2:
   std::cout << "Enabling low resource mode... ";
   controller.config().setBool("low_resource_mode_enabled", true);
   std::cout << "mode ENABLED!\n";
-  
-  //Saving configurations.
+
+  // Saving configurations.
   std::cout << "Configurations are saved.\n\n";
   controller.config().save();
 }

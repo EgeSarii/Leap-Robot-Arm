@@ -31,7 +31,7 @@ class Parser:
             self.mover.move_slowly(servos[1], theta2)
             self.mover.move_slowly(servos[2], theta3)
             self.mover.move_slowly(servos[3], theta4)
-            
+            time.sleep(0.001)
         self.mover.move_servo(movement1, servos[4])
         if(movement2 == "open"):
             servos[5].set_angle(0)
